@@ -99,6 +99,8 @@ const FacilityPage = () => {
         }
       }
       console.log('Total residents found:', allResidents.length);
+      console.log('Sample resident structure:', allResidents[0]);
+      console.log('Selected section ID:', selectedSection?.id);
       setResidents(allResidents);
     } catch (err) {
       console.error('Error fetching residents:', err);
@@ -472,40 +474,49 @@ const FacilityPage = () => {
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
                 <Button variant="contained" onClick={() => setAddOpen(true)}>Add Resident</Button>
               </Box>
-              {residents.filter(r => r.facility_section === selectedSection.id).length === 0 ? (
-                <Typography color="text.secondary">No residents found in this section.</Typography>
-              ) : (
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Name</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Created</TableCell>
-                        <TableCell>Updated</TableCell>
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {residents.filter(r => r.facility_section === selectedSection.id).map((resident) => (
-                        <TableRow key={resident.id}>
-                          <TableCell>
-                            <Button variant="text" color="primary" onClick={() => navigate(`/resident/${resident.id}`)}>
-                              {resident.name}
-                            </Button>
-                          </TableCell>
-                          <TableCell>{resident.status}</TableCell>
-                          <TableCell>{new Date(resident.created_at).toLocaleDateString()}</TableCell>
-                          <TableCell>{new Date(resident.updated_at).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                            <Button variant="outlined" color="error" size="small" onClick={() => setDeleteResidentId(resident.id)}>Delete</Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-              )}
+              {(() => {
+                const filteredResidents = residents.filter(r => r.facility_section === selectedSection.id);
+                console.log('Filtering residents:', {
+                  totalResidents: residents.length,
+                  selectedSectionId: selectedSection.id,
+                  filteredResidents: filteredResidents.length,
+                  allResidents: residents.map(r => ({ id: r.id, name: r.name, section: r.facility_section }))
+                });
+                return filteredResidents.length === 0 ? (
+                  <Typography color="text.secondary">No residents found in this section.</Typography>
+                ) : (
+                  <TableContainer>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Name</TableCell>
+                          <TableCell>Status</TableCell>
+                          <TableCell>Created</TableCell>
+                          <TableCell>Updated</TableCell>
+                          <TableCell>Actions</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {filteredResidents.map((resident) => (
+                          <TableRow key={resident.id}>
+                            <TableCell>
+                              <Button variant="text" color="primary" onClick={() => navigate(`/resident/${resident.id}`)}>
+                                {resident.name}
+                              </Button>
+                            </TableCell>
+                            <TableCell>{resident.status}</TableCell>
+                            <TableCell>{new Date(resident.created_at).toLocaleDateString()}</TableCell>
+                            <TableCell>{new Date(resident.updated_at).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <Button variant="outlined" color="error" size="small" onClick={() => setDeleteResidentId(resident.id)}>Delete</Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                );
+              })()}
               <Dialog open={!!deleteResidentId} onClose={() => setDeleteResidentId(null)}>
                 <DialogTitle>Delete Resident</DialogTitle>
                 <DialogContent>Are you sure you want to delete this resident?</DialogContent>
