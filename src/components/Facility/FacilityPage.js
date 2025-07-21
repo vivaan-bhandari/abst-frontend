@@ -86,7 +86,11 @@ const FacilityPage = () => {
       console.log('Auth header:', axios.defaults.headers.common['Authorization']);
       
       while (nextUrl) {
-        const res = await axios.get(nextUrl);
+        // Convert HTTP URLs to HTTPS to fix mixed content error
+        const secureUrl = nextUrl.replace('http://', 'https://');
+        console.log('Fetching from URL:', secureUrl);
+        
+        const res = await axios.get(secureUrl);
         const data = res.data;
         console.log('Residents API response:', data);
         
