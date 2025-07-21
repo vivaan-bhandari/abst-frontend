@@ -251,16 +251,25 @@ const FacilityPage = () => {
 
   const handleAddResident = async () => {
     try {
+      // Use selectedSection.id if a section is selected, otherwise use newResident.section
+      const sectionId = selectedSection ? selectedSection.id : newResident.section;
+      
+      if (!sectionId) {
+        setAddError('Please select a section.');
+        return;
+      }
+      
       await axios.post(`${API_BASE_URL}/api/residents/`, {
         name: newResident.name,
         status: 'New',
-        facility_section: newResident.section,
+        facility_section: sectionId,
       });
       setAddOpen(false);
       setNewResident({ name: '', section: '' });
       setAddError('');
       fetchResidents();
     } catch (err) {
+      console.error('Error adding resident:', err);
       setAddError('Failed to add resident.');
     }
   };
