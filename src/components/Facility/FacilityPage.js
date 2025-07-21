@@ -88,34 +88,16 @@ const FacilityPage = () => {
 
   const fetchResidents = useCallback(async () => {
     if (!facilityId) return;
-    let allResidents = [];
-    let nextUrl = `${API_BASE_URL}/api/residents/?facility_id=${facilityId}`;
     try {
       console.log('Fetching residents for facility:', facilityId);
       console.log('Auth header:', axios.defaults.headers.common['Authorization']);
       
-      while (nextUrl) {
-        // Convert HTTP URLs to HTTPS to fix mixed content error
-        const secureUrl = nextUrl.replace('http://', 'https://');
-        console.log('Fetching from URL:', secureUrl);
-        
-        try {
-          const res = await axios.get(secureUrl);
-          const data = res.data;
-          console.log('Residents API response:', data);
-          
-          if (data.results) {
-            allResidents = allResidents.concat(data.results);
-            nextUrl = data.next;
-          } else {
-            allResidents = data;
-            nextUrl = null;
-          }
-        } catch (error) {
-          console.log('Error fetching next page, stopping pagination:', error.message);
-          break; // Stop pagination on error
-        }
-      }
+      // Simple fix: Get all residents without pagination
+      const res = await axios.get(`${API_BASE_URL}/api/residents/?facility_id=${facilityId}&page_size=1000`);
+      const data = res.data;
+      console.log('Residents API response:', data);
+      
+      const allResidents = data.results || data;
       console.log('Total residents found:', allResidents.length);
       console.log('Sample resident structure:', allResidents[0]);
       console.log('Selected section ID:', selectedSection?.id);
