@@ -498,7 +498,7 @@ const FacilityPage = () => {
                 <Button variant="contained" onClick={() => setAddOpen(true)}>Add Resident</Button>
               </Box>
               {(() => {
-                const filteredResidents = residents.filter(r => r.facility_section === selectedSection.id);
+                const filteredResidents = residents.filter(r => r.facility_section === selectedSection.id || r.facility_section?.id === selectedSection.id);
                 console.log('Filtering residents:', {
                   totalResidents: residents.length,
                   selectedSectionId: selectedSection?.id,
