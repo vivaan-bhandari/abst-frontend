@@ -335,7 +335,7 @@ const FacilityPage = () => {
       {/* Caregiving Summary Chart */}
       <CaregivingSummaryChart 
         title={`Caregiving Time Summary - ${facility.name}`}
-        endpoint={`http://localhost:8000/api/facilities/${facilityId}/caregiving_summary/`}
+        endpoint={`${API_BASE_URL}/api/facilities/${facilityId}/caregiving_summary/`}
       />
 
       {/* Classic ABST Tabs */}
