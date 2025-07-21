@@ -273,16 +273,26 @@ const FacilityPage = () => {
       // Use selectedSection.id if a section is selected, otherwise use newResident.section
       const sectionId = selectedSection ? selectedSection.id : newResident.section;
       
+      console.log('Adding resident:', {
+        name: newResident.name,
+        sectionId: sectionId,
+        selectedSection: selectedSection,
+        newResidentSection: newResident.section
+      });
+      
       if (!sectionId) {
         setAddError('Please select a section.');
         return;
       }
       
-      await axios.post(`${API_BASE_URL}/api/residents/`, {
+      const response = await axios.post(`${API_BASE_URL}/api/residents/`, {
         name: newResident.name,
         status: 'New',
         facility_section: sectionId,
       });
+      
+      console.log('Resident created successfully:', response.data);
+      
       setAddOpen(false);
       setNewResident({ name: '', section: '' });
       setAddError('');
@@ -400,10 +410,18 @@ const FacilityPage = () => {
                 select
                 label="Section"
                 value={selectedSection ? selectedSection.id : newResident.section}
-                onChange={e => setNewResident({ ...newResident, section: e.target.value })}
+                onChange={e => {
+                  if (selectedSection) {
+                    // If a section is selected, update the selectedSection
+                    const section = sections.find(s => s.id === parseInt(e.target.value));
+                    setSelectedSection(section);
+                  } else {
+                    // Otherwise update the newResident.section
+                    setNewResident({ ...newResident, section: e.target.value });
+                  }
+                }}
                 fullWidth
                 margin="normal"
-                disabled={!!selectedSection}
               >
                 {sections.map(section => (
                   <MenuItem key={section.id} value={section.id}>{section.name}</MenuItem>
