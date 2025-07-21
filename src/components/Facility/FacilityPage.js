@@ -90,16 +90,21 @@ const FacilityPage = () => {
         const secureUrl = nextUrl.replace('http://', 'https://');
         console.log('Fetching from URL:', secureUrl);
         
-        const res = await axios.get(secureUrl);
-        const data = res.data;
-        console.log('Residents API response:', data);
-        
-        if (data.results) {
-          allResidents = allResidents.concat(data.results);
-          nextUrl = data.next;
-        } else {
-          allResidents = data;
-          nextUrl = null;
+        try {
+          const res = await axios.get(secureUrl);
+          const data = res.data;
+          console.log('Residents API response:', data);
+          
+          if (data.results) {
+            allResidents = allResidents.concat(data.results);
+            nextUrl = data.next;
+          } else {
+            allResidents = data;
+            nextUrl = null;
+          }
+        } catch (error) {
+          console.log('Error fetching next page, stopping pagination:', error.message);
+          break; // Stop pagination on error
         }
       }
       console.log('Total residents found:', allResidents.length);
