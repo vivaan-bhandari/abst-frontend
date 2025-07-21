@@ -503,7 +503,9 @@ const FacilityPage = () => {
           {selectedSection && (
             <Paper sx={{ p: 3, mt: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" gutterBottom>Residents in Section: {selectedSection.name}</Typography>
+                <Typography variant="h6" gutterBottom>
+                  Residents in Section: {selectedSection.name} (ID: {selectedSection.id})
+                </Typography>
                 <Button variant="outlined" onClick={() => setSelectedSection(null)}>Back to Sections</Button>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
@@ -513,7 +515,8 @@ const FacilityPage = () => {
                 const filteredResidents = residents.filter(r => r.facility_section === selectedSection.id);
                 console.log('Filtering residents:', {
                   totalResidents: residents.length,
-                  selectedSectionId: selectedSection.id,
+                  selectedSectionId: selectedSection?.id,
+                  selectedSection: selectedSection,
                   filteredResidents: filteredResidents.length,
                   allResidents: residents.map(r => ({ id: r.id, name: r.name, section: r.facility_section }))
                 });
