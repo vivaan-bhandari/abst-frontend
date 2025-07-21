@@ -63,7 +63,11 @@ const FacilityPage = () => {
   // Debug selectedSection changes
   useEffect(() => {
     console.log('SelectedSection changed:', selectedSection);
-  }, [selectedSection]);
+    // Make selectedSection globally accessible for debugging
+    window.selectedSection = selectedSection;
+    window.residents = residents;
+    window.sections = sections;
+  }, [selectedSection, residents, sections]);
   const [deleteResidentId, setDeleteResidentId] = useState(null);
 
   const fetchFacility = useCallback(async () => {
