@@ -59,6 +59,11 @@ const FacilityPage = () => {
   const [importStatus, setImportStatus] = useState({ open: false, message: '', severity: 'success' });
   const [tab, setTab] = useState(0);
   const [selectedSection, setSelectedSection] = useState(null);
+  
+  // Debug selectedSection changes
+  useEffect(() => {
+    console.log('SelectedSection changed:', selectedSection);
+  }, [selectedSection]);
   const [deleteResidentId, setDeleteResidentId] = useState(null);
 
   const fetchFacility = useCallback(async () => {
@@ -476,7 +481,10 @@ const FacilityPage = () => {
             </TableHead>
             <TableBody>
               {sections.map((section) => (
-                      <TableRow key={section.id} hover selected={selectedSection?.id === section.id} onClick={() => setSelectedSection(section)} style={{ cursor: 'pointer' }}>
+                      <TableRow key={section.id} hover selected={selectedSection?.id === section.id} onClick={() => {
+                        console.log('Clicking section:', section);
+                        setSelectedSection(section);
+                      }} style={{ cursor: 'pointer' }}>
                         <TableCell>{section.name}</TableCell>
                         <TableCell>{section.occupancy ?? '-'}</TableCell>
                         <TableCell>{section.created_at ? new Date(section.created_at).toLocaleDateString() : '-'}</TableCell>
