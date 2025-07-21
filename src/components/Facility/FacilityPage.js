@@ -82,9 +82,14 @@ const FacilityPage = () => {
     let allResidents = [];
     let nextUrl = `${API_BASE_URL}/api/residents/?facility_id=${facilityId}`;
     try {
+      console.log('Fetching residents for facility:', facilityId);
+      console.log('Auth header:', axios.defaults.headers.common['Authorization']);
+      
       while (nextUrl) {
         const res = await axios.get(nextUrl);
         const data = res.data;
+        console.log('Residents API response:', data);
+        
         if (data.results) {
           allResidents = allResidents.concat(data.results);
           nextUrl = data.next;
@@ -93,8 +98,11 @@ const FacilityPage = () => {
           nextUrl = null;
         }
       }
+      console.log('Total residents found:', allResidents.length);
       setResidents(allResidents);
     } catch (err) {
+      console.error('Error fetching residents:', err);
+      console.error('Error response:', err.response?.data);
       setResidents([]);
     }
   }, [facilityId]);
