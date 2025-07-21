@@ -504,7 +504,13 @@ const FacilityPage = () => {
                   selectedSectionId: selectedSection?.id,
                   selectedSection: selectedSection,
                   filteredResidents: filteredResidents.length,
-                  allResidents: residents.map(r => ({ id: r.id, name: r.name, section: r.facility_section }))
+                  allResidents: residents.map(r => ({ 
+                    id: r.id, 
+                    name: r.name, 
+                    section: r.facility_section,
+                    sectionType: typeof r.facility_section,
+                    sectionValue: r.facility_section
+                  }))
                 });
                 return filteredResidents.length === 0 ? (
                   <Typography color="text.secondary">No residents found in this section.</Typography>
