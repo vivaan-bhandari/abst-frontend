@@ -275,8 +275,9 @@ const FacilityPage = () => {
     if (!importFile) return;
     const formData = new FormData();
     formData.append('file', importFile);
+    formData.append('facility_id', facilityId); // Add facility context
     try {
-      await axios.post(`${API_BASE_URL}/api/adls/upload/`, formData, {
+      const response = await axios.post(`${API_BASE_URL}/api/adls/upload/`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setImportStatus({ open: true, message: 'Import successful!', severity: 'success' });
@@ -284,7 +285,9 @@ const FacilityPage = () => {
       setImportFile(null);
       fetchResidents();
     } catch (err) {
-      setImportStatus({ open: true, message: 'Import failed.', severity: 'error' });
+      console.error('Import error:', err);
+      const errorMessage = err.response?.data?.message || 'Import failed. Please check your file format.';
+      setImportStatus({ open: true, message: errorMessage, severity: 'error' });
     }
   };
 
