@@ -51,9 +51,9 @@ const chartTabs = [
 ];
 
 const shiftColors = {
-  Day: '#1e3a8a',      // Dark Blue (from logo)
-  Swing: '#60a5fa',    // Light Blue (from logo)
-  NOC: '#10b981',      // Bright Green (from logo leaf)
+  Day: '#60a5fa',      // Light Blue (Day)
+  Swing: '#0d9488',    // Teal (Swing)
+  NOC: '#8b5cf6',      // Purple (NOC)
 };
 
 const Analytics = ({ facilityId }) => {

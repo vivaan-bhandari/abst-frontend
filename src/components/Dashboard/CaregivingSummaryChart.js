@@ -14,9 +14,9 @@ import {
 import axios from 'axios';
 
 const COLORS = {
-  Day: '#1e3a8a',      // Dark Blue (from logo)
-  Eve: '#60a5fa',      // Light Blue (from logo)
-  NOC: '#10b981',      // Bright Green (from logo leaf)
+  Day: '#60a5fa',      // Light Blue (Day)
+  Eve: '#0d9488',      // Teal (Swing)
+  NOC: '#8b5cf6',      // Purple (NOC)
 };
 
 const CaregivingSummaryChart = ({ title, endpoint, queryParams = {} }) => {
