@@ -33,11 +33,16 @@ const ADLUpload = ({ onSuccess }) => {
   const handleFileSelect = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
+    
+    setSelectedFile(file);
     setUploading(true);
     setImportDetails(null);
     setError('');
+    setSuccess('');
+    
     const formData = new FormData();
     formData.append('file', file);
+    
     try {
       const response = await axios.post(`${API_BASE_URL}/api/adls/upload/`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -47,7 +52,8 @@ const ADLUpload = ({ onSuccess }) => {
       // Trigger parent refresh if provided
       if (onSuccess) onSuccess();
     } catch (err) {
-      setError('Failed to upload file.');
+      console.error('Upload error:', err);
+      setError(err.response?.data?.message || 'Failed to upload file. Please check the file format and try again.');
     } finally {
       setUploading(false);
     }
@@ -163,7 +169,15 @@ const ADLUpload = ({ onSuccess }) => {
               style={{ display: 'none' }}
               id="adl-upload-file"
               type="file"
-              onChange={handleFileSelect}
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  setSelectedFile(file);
+                  setError('');
+                  setSuccess('');
+                  setImportDetails(null);
+                }
+              }}
             />
             <label htmlFor="adl-upload-file">
               <Button
