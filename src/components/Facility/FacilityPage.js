@@ -60,14 +60,7 @@ const FacilityPage = () => {
   const [tab, setTab] = useState(0);
   const [selectedSection, setSelectedSection] = useState(null);
   
-  // Debug selectedSection changes
-  useEffect(() => {
-    console.log('SelectedSection changed:', selectedSection);
-    // Make selectedSection globally accessible for debugging
-    window.selectedSection = selectedSection;
-    window.residents = residents;
-    window.sections = sections;
-  }, [selectedSection, residents, sections]);
+
   const [deleteResidentId, setDeleteResidentId] = useState(null);
 
   const fetchFacility = useCallback(async () => {
@@ -89,18 +82,11 @@ const FacilityPage = () => {
   const fetchResidents = useCallback(async () => {
     if (!facilityId) return;
     try {
-      console.log('Fetching residents for facility:', facilityId);
-      console.log('Auth header:', axios.defaults.headers.common['Authorization']);
-      
-      // Simple fix: Get all residents without pagination
+      // Get all residents without pagination
       const res = await axios.get(`${API_BASE_URL}/api/residents/?facility_id=${facilityId}&page_size=1000`);
       const data = res.data;
-      console.log('Residents API response:', data);
       
       const allResidents = data.results || data;
-      console.log('Total residents found:', allResidents.length);
-      console.log('Sample resident structure:', allResidents[0]);
-      console.log('Selected section ID:', selectedSection?.id);
       setResidents(allResidents);
     } catch (err) {
       console.error('Error fetching residents:', err);
@@ -264,25 +250,16 @@ const FacilityPage = () => {
       // Use selectedSection.id if a section is selected, otherwise use newResident.section
       const sectionId = selectedSection ? selectedSection.id : newResident.section;
       
-      console.log('Adding resident:', {
-        name: newResident.name,
-        sectionId: sectionId,
-        selectedSection: selectedSection,
-        newResidentSection: newResident.section
-      });
-      
       if (!sectionId) {
         setAddError('Please select a section.');
         return;
       }
       
-      const response = await axios.post(`${API_BASE_URL}/api/residents/`, {
+      await axios.post(`${API_BASE_URL}/api/residents/`, {
         name: newResident.name,
         status: 'New',
         facility_section: sectionId,
       });
-      
-      console.log('Resident created successfully:', response.data);
       
       setAddOpen(false);
       setNewResident({ name: '', section: '' });
@@ -467,10 +444,7 @@ const FacilityPage = () => {
             </TableHead>
             <TableBody>
               {sections.map((section) => (
-                      <TableRow key={section.id} hover selected={selectedSection?.id === section.id} onClick={() => {
-                        console.log('Clicking section:', section);
-                        setSelectedSection(section);
-                      }} style={{ cursor: 'pointer' }}>
+                      <TableRow key={section.id} hover selected={selectedSection?.id === section.id} onClick={() => setSelectedSection(section)} style={{ cursor: 'pointer' }}>
                         <TableCell>{section.name}</TableCell>
                         <TableCell>{section.occupancy ?? '-'}</TableCell>
                         <TableCell>{section.created_at ? new Date(section.created_at).toLocaleDateString() : '-'}</TableCell>
@@ -499,19 +473,6 @@ const FacilityPage = () => {
               </Box>
               {(() => {
                 const filteredResidents = residents.filter(r => r.facility_section === selectedSection.id || r.facility_section?.id === selectedSection.id);
-                console.log('Filtering residents:', {
-                  totalResidents: residents.length,
-                  selectedSectionId: selectedSection?.id,
-                  selectedSection: selectedSection,
-                  filteredResidents: filteredResidents.length,
-                  allResidents: residents.map(r => ({ 
-                    id: r.id, 
-                    name: r.name, 
-                    section: r.facility_section,
-                    sectionType: typeof r.facility_section,
-                    sectionValue: r.facility_section
-                  }))
-                });
                 return filteredResidents.length === 0 ? (
                   <Typography color="text.secondary">No residents found in this section.</Typography>
                 ) : (

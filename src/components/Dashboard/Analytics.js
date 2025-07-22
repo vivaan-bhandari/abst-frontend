@@ -35,7 +35,7 @@ import {
 import axios from 'axios';
 import { API_BASE_URL } from '../../config';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
+const COLORS = ['#1e3a8a', '#10b981', '#60a5fa', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 const CHART_HEIGHT = 500;
 const AXIS_FONT = { fontSize: 18, fontWeight: 'bold' };
 const LABEL_FONT = { fontSize: 16 };
@@ -51,9 +51,9 @@ const chartTabs = [
 ];
 
 const shiftColors = {
-  Day: '#7ec0ee',
-  Swing: '#4682b4',
-  NOC: '#2c3e50',
+  Day: '#1e3a8a',      // Dark Blue (from logo)
+  Swing: '#60a5fa',    // Light Blue (from logo)
+  NOC: '#10b981',      // Bright Green (from logo leaf)
 };
 
 const Analytics = ({ facilityId }) => {
@@ -262,7 +262,7 @@ const Analytics = ({ facilityId }) => {
                   wrapperStyle={LABEL_FONT}
                 />
                 <Legend wrapperStyle={LABEL_FONT} />
-                <Bar dataKey="totalMinutes" fill="#8884d8" name="Minutes" />
+                <Bar dataKey="totalMinutes" fill="#1e3a8a" name="Minutes" />
               </BarChart>
             )}
           </ResponsiveContainer>
@@ -277,7 +277,7 @@ const Analytics = ({ facilityId }) => {
                 <YAxis style={AXIS_FONT} />
                 <Tooltip formatter={(value) => [`${value} min`, 'Total Time']} wrapperStyle={LABEL_FONT} />
                 <Legend wrapperStyle={LABEL_FONT} />
-                <Line type="monotone" dataKey="totalMinutes" stroke="#8884d8" strokeWidth={4} name="Minutes" />
+                <Line type="monotone" dataKey="totalMinutes" stroke="#1e3a8a" strokeWidth={4} name="Minutes" />
               </LineChart>
             )}
           </ResponsiveContainer>
@@ -292,7 +292,7 @@ const Analytics = ({ facilityId }) => {
                 <YAxis style={AXIS_FONT} label={{ value: 'Hours', angle: -90, position: 'insideLeft' }} />
                 <Tooltip formatter={(value) => [`${(value/60).toFixed(1)} h`, 'Total Time']} wrapperStyle={LABEL_FONT} />
                 <Legend wrapperStyle={LABEL_FONT} />
-                <Bar dataKey="totalMinutes" fill="#1976d2" name="Hours" minPointSize={2} isAnimationActive />
+                <Bar dataKey="totalMinutes" fill="#10b981" name="Hours" minPointSize={2} isAnimationActive />
               </BarChart>
             )}
           </ResponsiveContainer>
@@ -309,7 +309,7 @@ const Analytics = ({ facilityId }) => {
                   labelLine={false}
                   label={({ shift, totalHours }) => `${shift}: ${totalHours}h`}
                   outerRadius={180}
-                  fill="#8884d8"
+                  fill="#60a5fa"
                   dataKey="totalMinutes"
                   style={LABEL_FONT}
                 >
@@ -333,7 +333,7 @@ const Analytics = ({ facilityId }) => {
                 <YAxis dataKey="name" type="category" width={180} style={AXIS_FONT} />
                 <Tooltip formatter={(value) => [`${value} min`, 'Total Time']} wrapperStyle={LABEL_FONT} />
                 <Legend wrapperStyle={LABEL_FONT} />
-                <Bar dataKey="totalMinutes" fill="#82ca9d" name="Minutes" />
+                <Bar dataKey="totalMinutes" fill="#10b981" name="Minutes" />
               </BarChart>
             )}
           </ResponsiveContainer>
@@ -348,7 +348,7 @@ const Analytics = ({ facilityId }) => {
                 <YAxis style={AXIS_FONT} />
                 <Tooltip formatter={(value) => [`${value} min`, 'Total Time']} wrapperStyle={LABEL_FONT} />
                 <Legend wrapperStyle={LABEL_FONT} />
-                <Area type="monotone" dataKey="totalMinutes" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} name="Minutes" />
+                <Area type="monotone" dataKey="totalMinutes" stroke="#1e3a8a" fill="#60a5fa" fillOpacity={0.6} name="Minutes" />
               </AreaChart>
             )}
           </ResponsiveContainer>
@@ -365,7 +365,7 @@ const Analytics = ({ facilityId }) => {
                   labelLine={false}
                   label={({ status, count }) => `${status}: ${count}`}
                   outerRadius={180}
-                  fill="#8884d8"
+                  fill="#1e3a8a"
                   dataKey="count"
                   style={LABEL_FONT}
                 >

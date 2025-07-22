@@ -11,7 +11,6 @@ import AccessManagement from './components/Auth/AccessManagement';
 import WelcomeScreen from './components/Auth/WelcomeScreen';
 import ResidentDetails from './components/Dashboard/ResidentDetails';
 import axios from 'axios';
-console.log("LOADED APP.TSX");
 
 interface User {
   id: number;
