@@ -58,6 +58,7 @@ const ResidentList = ({ navigate }) => {
   const [importFile, setImportFile] = useState(null);
   const [importError, setImportError] = useState('');
   const [importSuccess, setImportSuccess] = useState('');
+  const [importLoading, setImportLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedResident, setSelectedResident] = useState(null);
   const [residentADLs, setResidentADLs] = useState([]);
@@ -196,6 +197,10 @@ const ResidentList = ({ navigate }) => {
       return;
     }
 
+    setImportLoading(true);
+    setImportError('');
+    setImportSuccess('');
+
     const formData = new FormData();
     formData.append('file', importFile);
 
@@ -214,6 +219,8 @@ const ResidentList = ({ navigate }) => {
     } catch (err) {
       console.error('Import error:', err);
       setImportError(err.response?.data?.message || 'Failed to import ADL data. Please check your file format.');
+    } finally {
+      setImportLoading(false);
     }
   };
 
@@ -511,10 +518,15 @@ const ResidentList = ({ navigate }) => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleImportDialogClose}>Cancel</Button>
-          <Button variant="contained" onClick={handleImport} disabled={!importFile}>
-            Import
-          </Button>
+                  <Button onClick={handleImportDialogClose} disabled={importLoading}>Cancel</Button>
+        <Button 
+          variant="contained" 
+          onClick={handleImport} 
+          disabled={!importFile || importLoading}
+          startIcon={importLoading ? <CircularProgress size={16} /> : null}
+        >
+          {importLoading ? 'Importing...' : 'Import'}
+        </Button>
         </DialogActions>
       </Dialog>
 
