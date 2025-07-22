@@ -91,7 +91,7 @@ const ResidentList = ({ navigate }) => {
 
   const fetchQuestions = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/api/adls/questions/');
+      const res = await axios.get(`${API_BASE_URL}/api/adls/questions/`);
       setQuestions(res.data);
     } catch (err) {
       setError('Failed to fetch ADL questions');
@@ -139,7 +139,7 @@ const ResidentList = ({ navigate }) => {
   const handleDelete = async (id) => {
     if (window.confirm('Delete this resident?')) {
       try {
-        await axios.delete(`http://localhost:8000/api/residents/${id}/`);
+        await axios.delete(`${API_BASE_URL}/api/residents/${id}/`);
         fetchResidents();
       } catch (err) {
         setError('Failed to delete resident');
@@ -149,7 +149,7 @@ const ResidentList = ({ navigate }) => {
 
   const handleExport = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/residents/export/', {
+      const response = await axios.get(`${API_BASE_URL}/api/residents/export/`, {
         responseType: 'blob',
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -200,19 +200,20 @@ const ResidentList = ({ navigate }) => {
     formData.append('file', importFile);
 
     try {
-      const response = await axios.post('http://localhost:8000/api/residents/import_csv/', formData, {
+      const response = await axios.post(`${API_BASE_URL}/api/adls/upload/`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Accept': 'application/json',
         },
       });
-      setImportSuccess(response.data.message || 'Residents imported successfully');
+      setImportSuccess('ADL data imported successfully');
       fetchResidents();
       setTimeout(() => {
         handleImportDialogClose();
       }, 1500);
     } catch (err) {
-      setImportError(err.response?.data?.error || 'Failed to import residents. Please check your file format.');
+      console.error('Import error:', err);
+      setImportError(err.response?.data?.message || 'Failed to import ADL data. Please check your file format.');
     }
   };
 
@@ -222,7 +223,7 @@ const ResidentList = ({ navigate }) => {
     setModalLoading(true);
     setModalError('');
     try {
-      const adlRes = await axios.get(`http://localhost:8000/api/adls/?resident=${resident.id}`);
+      const adlRes = await axios.get(`${API_BASE_URL}/api/adls/?resident=${resident.id}`);
       setResidentADLs(adlRes.data.results || adlRes.data);
     } catch (err) {
       setModalError('Failed to fetch ADL records');
@@ -264,14 +265,14 @@ const ResidentList = ({ navigate }) => {
     setEditLoading(true);
     setEditError('');
     try {
-      await axios.patch(`http://localhost:8000/api/adls/${editADL.id}/`, {
+      await axios.patch(`${API_BASE_URL}/api/adls/${editADL.id}/`, {
         minutes: Number(editForm.minutes),
         frequency: Number(editForm.frequency),
         status: editForm.status,
         per_day_shift_times: editForm.per_day_shift_times,
       });
       // Refresh ADLs
-      const adlRes = await axios.get(`http://localhost:8000/api/adls/?resident=${selectedResident.id}`);
+      const adlRes = await axios.get(`${API_BASE_URL}/api/adls/?resident=${selectedResident.id}`);
       setResidentADLs(adlRes.data.results || adlRes.data);
       setEditADL(null);
     } catch (err) {
@@ -314,13 +315,13 @@ const ResidentList = ({ navigate }) => {
     setModalEditError('');
     try {
       if (modalAdlId) {
-        await axios.patch(`http://localhost:8000/api/adls/${modalAdlId}/`, {
+        await axios.patch(`${API_BASE_URL}/api/adls/${modalAdlId}/`, {
           minutes: Number(modalForm.minutes),
           frequency: Number(modalForm.frequency),
           status: modalForm.status,
         });
       } else {
-        await axios.post('http://localhost:8000/api/adls/', {
+        await axios.post(`${API_BASE_URL}/api/adls/`, {
           resident: selectedResident.id,
           adl_question: modalQuestion.id,
           minutes: Number(modalForm.minutes),
@@ -329,7 +330,7 @@ const ResidentList = ({ navigate }) => {
         });
       }
       // Refresh ADLs
-      const adlRes = await axios.get(`http://localhost:8000/api/adls/?resident=${selectedResident.id}`);
+      const adlRes = await axios.get(`${API_BASE_URL}/api/adls/?resident=${selectedResident.id}`);
       setResidentADLs(adlRes.data.results || adlRes.data);
       setModalQuestion(null);
     } catch (err) {
@@ -350,7 +351,7 @@ const ResidentList = ({ navigate }) => {
 
   const handleEditResidentSave = async () => {
     try {
-      await axios.patch(`http://localhost:8000/api/residents/${editResidentForm.id}/`, {
+      await axios.patch(`${API_BASE_URL}/api/residents/${editResidentForm.id}/`, {
         name: editResidentForm.name,
         status: editResidentForm.status,
       });
@@ -363,7 +364,7 @@ const ResidentList = ({ navigate }) => {
 
   const handleDeleteResident = async () => {
     try {
-      await axios.delete(`http://localhost:8000/api/residents/${deleteResidentId}/`);
+      await axios.delete(`${API_BASE_URL}/api/residents/${deleteResidentId}/`);
       setDeleteResidentId(null);
       fetchResidents();
     } catch (err) {
