@@ -73,7 +73,8 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
     start_time: '',
     end_time: '',
     duration_hours: 0,
-    notes: ''
+    notes: '',
+    editingShiftId: null
   });
   const [createShiftLoading, setCreateShiftLoading] = useState(false);
   const [showClearShiftsDialog, setShowClearShiftsDialog] = useState(false);
@@ -158,6 +159,25 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
       setShiftTemplates(templatesData);
       setAssignments(assignmentsData);
       
+      // Debug: Log the data structure
+      console.log('🔍 DEBUGGING DATA STRUCTURE:');
+      console.log('📊 Shifts data:', shiftsData);
+      console.log('📋 Templates data:', templatesData);
+      console.log('🔢 Shifts count:', shiftsData.length);
+      
+      // Log first shift structure if available
+      if (shiftsData.length > 0) {
+        console.log('📝 First shift structure:', shiftsData[0]);
+        console.log('📝 First shift template field:', shiftsData[0].template);
+        console.log('📝 First shift template_details:', shiftsData[0].template_details);
+      }
+      
+      // Log first template structure if available
+      if (templatesData.length > 0) {
+        console.log('📋 First template structure:', templatesData[0]);
+        console.log('📋 First template shift_type:', templatesData[0].shift_type);
+      }
+      
       // Show success message
       setSuccessMessage(`Data refreshed successfully! Loaded ${assignmentsData.length} assignments, ${shiftsData.length} shifts, and ${staffData.length} staff members.`);
       setShowSuccessMessage(true);
@@ -214,30 +234,56 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
 
   // Get shifts for a specific day and shift type
   const getShiftsForDay = (date, shiftType) => {
+    console.log(`🔍 Looking for shifts on ${date.toDateString()} for shift type ${shiftType}`);
+    console.log('📊 Available shifts:', shifts);
+    console.log('📋 Available templates:', shiftTemplates);
     
     const dayShifts = shifts.filter(shift => {
-      const shiftDate = new Date(shift.date);
-      // Handle both object and ID for shift_template
-      let templateId = shift.shift_template;
-      if (typeof shift.shift_template === 'object' && shift.shift_template !== null) {
-        templateId = shift.shift_template.id;
-      }
+      console.log(`\n--- Processing Shift ${shift.id} ---`);
+      console.log('Shift data:', shift);
       
-      const template = shiftTemplates.find(t => t.id === templateId);
+      const shiftDate = new Date(shift.date);
+      console.log('Shift date:', shiftDate, 'Type:', typeof shiftDate);
+      console.log('Target date:', date, 'Type:', typeof date);
+      
+      // Handle both object and ID for template (backend field) and shift_template (frontend field)
+      let templateId = shift.template || shift.shift_template;
+      if (typeof templateId === 'object' && templateId !== null) {
+        templateId = templateId.id;
+      }
+      console.log('Template ID:', templateId, 'Type:', typeof templateId);
+      
+      // If we have template_details, use that directly
+      let template = shift.template_details;
+      console.log('Template details from shift:', template);
+      
+      if (!template) {
+        template = shiftTemplates.find(t => t.id === templateId);
+        console.log('Template found from shiftTemplates array:', template);
+      }
       
       // If no template found, skip this shift
       if (!template) {
+        console.log('❌ No template found for shift:', shift);
         return false;
       }
       
+      console.log('✅ Template found:', template);
+      console.log('Template shift_type:', template.shift_type);
+      console.log('Target shift type:', shiftType);
+      
       // Check if dates match
       const dateMatches = shiftDate.toDateString() === date.toDateString();
+      console.log(`📅 Shift ${shift.id}: date ${shiftDate.toDateString()} matches ${date.toDateString()}: ${dateMatches}`);
       
       // Check if shift type matches (handle both cases where shift_type might not be set)
       let shiftTypeMatches = false;
       if (template.shift_type) {
         // Fix case sensitivity: convert both to lowercase for comparison
-        shiftTypeMatches = template.shift_type.toLowerCase() === shiftType.toLowerCase();
+        const templateType = template.shift_type.toLowerCase();
+        const targetType = shiftType.toLowerCase();
+        shiftTypeMatches = templateType === targetType;
+        console.log(`🔄 Shift ${shift.id}: template shift_type "${template.shift_type}" (${templateType}) matches "${shiftType}" (${targetType}): ${shiftTypeMatches}`);
       } else {
         // If no shift_type, try to infer from start_time
         const startHour = new Date(`2000-01-01T${template.start_time}`).getHours();
@@ -248,11 +294,15 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
         } else if (shiftType === 'NOC' && (startHour >= 22 || startHour < 6)) {
           shiftTypeMatches = true;
         }
+        console.log(`⏰ Shift ${shift.id}: inferred shift type from start time ${template.start_time} (hour ${startHour}) matches ${shiftType}: ${shiftTypeMatches}`);
       }
       
-      return dateMatches && shiftTypeMatches;
+      const result = dateMatches && shiftTypeMatches;
+      console.log(`🎯 Shift ${shift.id}: final result: ${result} (date: ${dateMatches}, type: ${shiftTypeMatches})`);
+      return result;
     });
     
+    console.log(`✅ Found ${dayShifts.length} shifts for ${date.toDateString()} - ${shiftType}:`, dayShifts);
     return dayShifts;
   };
 
@@ -278,21 +328,25 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
     return foundAssignments;
   };
 
-  // Calculate required staff for a shift
-  const getRequiredStaff = (shift) => {
-    // Check if the shift has an effective_staff_count (from acuity-based staffing)
-    if (shift.effective_staff_count && shift.effective_staff_count > 0) {
-      return shift.effective_staff_count;
-    }
-    
-    // Fall back to shift template's required_staff_count
-    let templateId = shift.shift_template;
-    if (typeof shift.shift_template === 'object' && shift.shift_template !== null) {
-      templateId = shift.shift_template.id;
-    }
-    const template = shiftTemplates.find(t => t.id === templateId);
-    return template?.required_staff_count || 1;
-  };
+        // Calculate required staff for a shift
+      const getRequiredStaff = (shift) => {
+        // Check if the shift has an effective_staff_count (from acuity-based staffing)
+        if (shift.effective_staff_count && shift.effective_staff_count > 0) {
+          return shift.effective_staff_count;
+        }
+        
+        // Fall back to shift template's required_staff_count
+        let templateId = shift.template || shift.shift_template;
+        if (typeof templateId === 'object' && templateId !== null) {
+          templateId = templateId.id;
+        }
+        // Use template_details if available, otherwise find in shiftTemplates
+        let template = shift.template_details;
+        if (!template) {
+          template = shiftTemplates.find(t => t.id === templateId);
+        }
+        return template?.required_staff_count || 1;
+      };
 
   // Get available staff for a role
   const getAvailableStaff = (role, date, shiftType) => {
@@ -322,15 +376,19 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
     );
   };
 
-  // Validation rules
-  const validateAssignment = (staffId, shiftId, role) => {
-    const staffMember = staff.find(s => s.id === staffId);
-    const shift = shifts.find(s => s.id === shiftId);
-    let templateId = shift.shift_template;
-    if (typeof shift.shift_template === 'object' && shift.shift_template !== null) {
-      templateId = shift.shift_template.id;
-    }
-    const template = shiftTemplates.find(t => t.id === templateId);
+      // Validation rules
+    const validateAssignment = (staffId, shiftId, role) => {
+      const staffMember = staff.find(s => s.id === staffId);
+      const shift = shifts.find(s => s.id === shiftId);
+      let templateId = shift.template || shift.shift_template;
+      if (typeof templateId === 'object' && templateId !== null) {
+        templateId = templateId.id;
+      }
+      // Use template_details if available, otherwise find in shiftTemplates
+      let template = shift.template_details;
+      if (!template) {
+        template = shiftTemplates.find(t => t.id === templateId);
+      }
     
     if (!staffMember || !shift || !template) {
       return { valid: false, error: 'Invalid data' };
@@ -358,41 +416,45 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
       const nextDay = new Date(shift.date);
       nextDay.setDate(nextDay.getDate() + 1);
       
-      // Check if there are any day or swing shifts the next day
-      const nextDayAssignments = assignments.filter(a => {
-        // Handle both object and ID for shift
-        let assignmentShift;
-        if (typeof a.shift === 'object' && a.shift !== null) {
-          assignmentShift = a.shift;
-        } else {
-          assignmentShift = shifts.find(s => s.id === a.shift);
-        }
-        
-        if (!assignmentShift) return false;
-        const assignmentDate = new Date(assignmentShift.date);
-        return assignmentDate.toDateString() === nextDay.toDateString();
-      });
-      
-      const hasNextDayShift = nextDayAssignments.some(a => {
-        // Handle both object and ID for shift
-        let assignmentShift;
-        if (typeof a.shift === 'object' && a.shift !== null) {
-          assignmentShift = a.shift;
-        } else {
-          assignmentShift = shifts.find(s => s.id === a.shift);
-        }
-        
-        if (!assignmentShift) return false;
-        
-        // Handle both object and ID for shift_template
-        let templateId = assignmentShift.shift_template;
-        if (typeof assignmentShift.shift_template === 'object' && assignmentShift.shift_template !== null) {
-          templateId = assignmentShift.shift_template.id;
-        }
-        
-        const assignmentTemplate = shiftTemplates.find(t => t.id === templateId);
-        return assignmentTemplate?.shift_type === 'day' || assignmentTemplate?.shift_type === 'swing';
-      });
+               // Check if there are any day or swing shifts the next day
+         const nextDayAssignments = assignments.filter(a => {
+           // Handle both object and ID for shift
+           let assignmentShift;
+           if (typeof a.shift === 'object' && a.shift !== null) {
+             assignmentShift = a.shift;
+           } else {
+             assignmentShift = shifts.find(s => s.id === a.shift);
+           }
+           
+           if (!assignmentShift) return false;
+           const assignmentDate = new Date(assignmentShift.date);
+           return assignmentDate.toDateString() === nextDay.toDateString();
+         });
+         
+         const hasNextDayShift = nextDayAssignments.some(a => {
+           // Handle both object and ID for shift
+           let assignmentShift;
+           if (typeof a.shift === 'object' && a.shift !== null) {
+             assignmentShift = a.shift;
+           } else {
+             assignmentShift = shifts.find(s => s.id === a.shift);
+           }
+           
+           if (!assignmentShift) return false;
+           
+           // Handle both object and ID for template (backend field) and shift_template (frontend field)
+           let templateId = assignmentShift.template || assignmentShift.shift_template;
+           if (typeof templateId === 'object' && templateId !== null) {
+             templateId = templateId.id;
+           }
+           
+           // Use template_details if available, otherwise find in shiftTemplates
+           let assignmentTemplate = assignmentShift.template_details;
+           if (!assignmentTemplate) {
+             assignmentTemplate = shiftTemplates.find(t => t.id === templateId);
+           }
+           return assignmentTemplate?.shift_type === 'day' || assignmentTemplate?.shift_type === 'swing';
+         });
       
       if (hasNextDayShift) {
         return { valid: false, error: 'NOC shift followed by day/swing shift violates rest rule' };
@@ -414,17 +476,21 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
         const assignmentDate = new Date(assignmentShift.date);
         return assignmentDate >= weekStart && assignmentDate <= weekEnd;
       })
-      .reduce((total, assignment) => {
-        const assignmentShift = shifts.find(s => s.id === assignment.shift);
-        let templateId = assignmentShift.shift_template;
-        if (typeof assignmentShift.shift_template === 'object' && assignmentShift.shift_template !== null) {
-          templateId = assignmentShift.shift_template.id;
-        }
-        const template = shiftTemplates.find(t => t.id === templateId);
-        return total + (template?.duration_hours || 8);
-      }, 0);
+              .reduce((total, assignment) => {
+          const assignmentShift = shifts.find(s => s.id === assignment.shift);
+          let templateId = assignmentShift.template || assignmentShift.shift_template;
+          if (typeof templateId === 'object' && templateId !== null) {
+            templateId = templateId.id;
+          }
+          // Use template_details if available, otherwise find in shiftTemplates
+          let template = assignmentShift.template_details;
+          if (!template) {
+            template = shiftTemplates.find(t => t.id === templateId);
+          }
+          return total + (template?.duration_hours || 8);
+        }, 0);
 
-    const newShiftHours = template?.duration_hours || 8;
+      const newShiftHours = template?.duration_hours || 8;
     if (weeklyHours + newShiftHours > (staffMember.max_hours_per_week || 40)) {
       return { valid: false, error: `Would exceed weekly max hours (${staffMember.max_hours_per_week || 40})` };
     }
@@ -452,24 +518,28 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
        
 
        
-       // Fallback: if role undefined, infer from template's required_roles or default to 'cna'
-       if (!role || role.length < 3) { // Check if role is too short (like 'cn')
-         const inferredShift = shifts.find(s => s.id === parseInt(shiftId));
-         if (inferredShift) {
-           let templateId = inferredShift.shift_template;
-           if (typeof inferredShift.shift_template === 'object' && inferredShift.shift_template !== null) {
-             templateId = inferredShift.shift_template.id;
-           }
-           const template = shiftTemplates.find(t => t.id === templateId);
-           if (template && Array.isArray(template.required_roles) && template.required_roles.length > 0) {
-             role = template.required_roles[0];
+                // Fallback: if role undefined, infer from template's required_roles or default to 'cna'
+         if (!role || role.length < 3) { // Check if role is too short (like 'cn')
+           const inferredShift = shifts.find(s => s.id === parseInt(shiftId));
+           if (inferredShift) {
+             let templateId = inferredShift.template || inferredShift.shift_template;
+             if (typeof templateId === 'object' && templateId !== null) {
+               templateId = templateId.id;
+             }
+             // Use template_details if available, otherwise find in shiftTemplates
+             let template = inferredShift.template_details;
+             if (!template) {
+               template = shiftTemplates.find(t => t.id === templateId);
+             }
+             if (template && Array.isArray(template.required_roles) && template.required_roles.length > 0) {
+               role = template.required_roles[0];
+             } else {
+               role = 'cna';
+             }
            } else {
              role = 'cna';
            }
-         } else {
-           role = 'cna';
          }
-       }
       
                              // Check if assignment already exists
         const existingAssignment = assignments.find(a => {
@@ -572,13 +642,17 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
         return shiftDate >= weekDates[0] && shiftDate <= weekDates[6];
       });
 
-      // For each shift, try to fill required roles
-      for (const shift of weekShifts) {
-        let templateId = shift.shift_template;
-        if (typeof shift.shift_template === 'object' && shift.shift_template !== null) {
-          templateId = shift.shift_template.id;
-        }
-        const template = shiftTemplates.find(t => t.id === templateId);
+              // For each shift, try to fill required roles
+        for (const shift of weekShifts) {
+          let templateId = shift.template || shift.shift_template;
+          if (typeof templateId === 'object' && templateId !== null) {
+            templateId = templateId.id;
+          }
+          // Use template_details if available, otherwise find in shiftTemplates
+          let template = shift.template_details;
+          if (!template) {
+            template = shiftTemplates.find(t => t.id === templateId);
+          }
         const requiredRoles = (template && Array.isArray(template.required_roles) && template.required_roles.length > 0)
           ? template.required_roles
           : ['cna'];
@@ -654,11 +728,15 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
       })
       .reduce((total, assignment) => {
         const assignmentShift = shifts.find(s => s.id === assignment.shift);
-        let templateId = assignmentShift.shift_template;
-        if (typeof assignmentShift.shift_template === 'object' && assignmentShift.shift_template !== null) {
-          templateId = assignmentShift.shift_template.id;
+        let templateId = assignmentShift.template || assignmentShift.shift_template;
+        if (typeof templateId === 'object' && templateId !== null) {
+          templateId = templateId.id;
         }
-        const template = shiftTemplates.find(t => t.id === templateId);
+        // Use template_details if available, otherwise find in shiftTemplates
+        let template = assignmentShift.template_details;
+        if (!template) {
+          template = shiftTemplates.find(t => t.id === templateId);
+        }
         return total + (template?.duration_hours || 8);
       }, 0);
   };
@@ -713,7 +791,7 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
       
       const requestData = {
         date: formattedDate,
-        shift_template: parseInt(shiftTemplateId),
+        template: parseInt(shiftTemplateId),
         start_time: createShiftData.start_time,
         end_time: createShiftData.end_time,
         duration_hours: createShiftData.duration_hours,
@@ -722,23 +800,12 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
       
       let response;
       
-      // Check if this is an edit operation (we have an existing shift template ID)
-      const isEdit = createShiftData.shift_template && typeof createShiftData.shift_template === 'string' && createShiftData.shift_template.length > 0;
+      // Check if this is an edit operation (we have an existing shift ID)
+      const isEdit = createShiftData.editingShiftId !== null;
       
       if (isEdit) {
-        // Try to find existing shift to update
-        const existingShift = shifts.find(shift => 
-          shift.date === createShiftData.date && 
-          (shift.shift_template?.id === createShiftData.shift_template || shift.shift_template === createShiftData.shift_template)
-        );
-        
-        if (existingShift) {
-          // Update existing shift
-          response = await axios.put(`${API_BASE_URL}/api/scheduling/shifts/${existingShift.id}/?facility=${selectedFacility}`, requestData);
-        } else {
-          // Create new shift if no existing shift found
-          response = await axios.post(`${API_BASE_URL}/api/scheduling/shifts/?facility=${selectedFacility}`, requestData);
-        }
+        // Update existing shift using the stored ID
+        response = await axios.put(`${API_BASE_URL}/api/scheduling/shifts/${createShiftData.editingShiftId}/?facility=${selectedFacility}`, requestData);
       } else {
         // Create new shift
         response = await axios.post(`${API_BASE_URL}/api/scheduling/shifts/?facility=${selectedFacility}`, requestData);
@@ -746,7 +813,7 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
       
       // Close dialog and reset form
       setShowCreateShiftDialog(false);
-      setCreateShiftData({ date: '', shift_template: '', start_time: '', end_time: '', duration_hours: 0, notes: '' });
+      setCreateShiftData({ date: '', shift_template: '', start_time: '', end_time: '', duration_hours: 0, notes: '', editingShiftId: null });
       
       // Refresh data to show new/updated shift
       await fetchData();
@@ -761,7 +828,7 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
       
-      const isEdit = createShiftData.shift_template && typeof createShiftData.shift_template === 'string' && createShiftData.shift_template.length > 0;
+      const isEdit = createShiftData.editingShiftId !== null;
       let errorMessage = isEdit ? 'Failed to update shift' : 'Failed to create shift';
       
       if (error.response?.data) {
@@ -791,7 +858,8 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
       start_time: '',
       end_time: '',
       duration_hours: 0,
-      notes: `${shiftType} shift`
+      notes: `${shiftType} shift`,
+      editingShiftId: null
     });
     setShowCreateShiftDialog(true);
   };
@@ -801,11 +869,12 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
     // Open edit dialog for existing shift
     setCreateShiftData({
       date: shift.date,
-      shift_template: shift.shift_template?.id || shift.shift_template || '',
+      shift_template: shift.template?.id || shift.shift_template?.id || shift.template || shift.shift_template || '',
       start_time: shift.start_time || '',
       end_time: shift.end_time || '',
       duration_hours: shift.duration_hours || 0,
-      notes: shift.notes || ''
+      notes: shift.notes || '',
+      editingShiftId: shift.id
     });
     setShowCreateShiftDialog(true);
   };
@@ -877,13 +946,17 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
         const dayShifts = getShiftsForDay(date, shiftType);
         dayShifts.forEach(shift => {
           const assignments = getAssignmentsForShift(shift.id);
-          assignments.forEach(assignment => {
-            const staffMember = staff.find(s => s.id === assignment.staff);
-            let templateId = shift.shift_template;
-            if (typeof shift.shift_template === 'object' && shift.shift_template !== null) {
-              templateId = shift.shift_template.id;
-            }
-            const template = shiftTemplates.find(t => t.id === templateId);
+                     assignments.forEach(assignment => {
+             const staffMember = staff.find(s => s.id === assignment.staff);
+             let templateId = shift.template || shift.shift_template;
+             if (typeof templateId === 'object' && templateId !== null) {
+               templateId = templateId.id;
+             }
+             // Use template_details if available, otherwise find in shiftTemplates
+             let template = shift.template_details;
+             if (!template) {
+               template = shiftTemplates.find(t => t.id === templateId);
+             }
             const startTime = shiftTimeRanges[shiftType].split('-')[0];
             const endTime = shiftTimeRanges[shiftType].split('-')[1];
             
@@ -911,13 +984,17 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
          return assignmentStaffId === staffMember.id;
        });
       
-      staffAssignments.forEach(assignment => {
-        const shift = shifts.find(s => s.id === assignment.shift);
-        let templateId = shift.shift_template;
-        if (typeof shift.shift_template === 'object' && shift.shift_template !== null) {
-          templateId = shift.shift_template.id;
-        }
-        const template = shiftTemplates.find(t => t.id === templateId);
+             staffAssignments.forEach(assignment => {
+         const shift = shifts.find(s => s.id === assignment.shift);
+         let templateId = shift.template || shift.shift_template;
+         if (typeof templateId === 'object' && templateId !== null) {
+           templateId = templateId.id;
+         }
+         // Use template_details if available, otherwise find in shiftTemplates
+         let template = shift.template_details;
+         if (!template) {
+           template = shiftTemplates.find(t => t.id === templateId);
+         }
         const shiftDate = new Date(shift.date);
         
         // Determine shift times based on template
@@ -1234,11 +1311,15 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
                   {shifts.filter(shift => {
                     if (!isDateInWeek(shift.date)) return false;
                     
-                    let templateId = shift.shift_template;
-                    if (typeof shift.shift_template === 'object' && shift.shift_template !== null) {
-                      templateId = shift.shift_template.id;
+                    let templateId = shift.template || shift.shift_template;
+                    if (typeof templateId === 'object' && templateId !== null) {
+                      templateId = templateId.id;
                     }
-                    const template = shiftTemplates.find(t => t.id === templateId);
+                    // Use template_details if available, otherwise find in shiftTemplates
+                    let template = shift.template_details;
+                    if (!template) {
+                      template = shiftTemplates.find(t => t.id === templateId);
+                    }
                     const requiredStaff = shift.effective_staff_count || template?.required_staff_count || 1;
                     const assignments = getAssignmentsForShift(shift.id);
                     
@@ -1286,11 +1367,15 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
                   dateDisplay = 'Error parsing date';
                 }
                 
-                let templateId = shift.shift_template;
-                if (typeof shift.shift_template === 'object' && shift.shift_template !== null) {
-                  templateId = shift.shift_template.id;
+                let templateId = shift.template || shift.shift_template;
+                if (typeof templateId === 'object' && templateId !== null) {
+                  templateId = templateId.id;
                 }
-                const template = shiftTemplates.find(t => t.id === templateId);
+                // Use template_details if available, otherwise find in shiftTemplates
+                let template = shift.template_details;
+                if (!template) {
+                  template = shiftTemplates.find(t => t.id === templateId);
+                }
                 
                 return (
                   <Typography key={index} variant="caption" display="block" sx={{ ml: 2 }}>
@@ -1670,13 +1755,17 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
                              );
                            }
 
-                          const shiftAssignments = getAssignmentsForShift(shift.id);
-                          const requiredStaff = getRequiredStaff(shift);
-                          let templateId = shift.shift_template;
-                          if (typeof shift.shift_template === 'object' && shift.shift_template !== null) {
-                            templateId = shift.shift_template.id;
-                          }
-                          const template = shiftTemplates.find(t => t.id === templateId);
+                                                     const shiftAssignments = getAssignmentsForShift(shift.id);
+                           const requiredStaff = getRequiredStaff(shift);
+                           let templateId = shift.template || shift.shift_template;
+                           if (typeof templateId === 'object' && templateId !== null) {
+                             templateId = templateId.id;
+                           }
+                           // Use template_details if available, otherwise find in shiftTemplates
+                           let template = shift.template_details;
+                           if (!template) {
+                             template = shiftTemplates.find(t => t.id === templateId);
+                           }
                           const requiredRoles = (template && Array.isArray(template.required_roles) && template.required_roles.length > 0)
                             ? template.required_roles
                             : ['cna'];
@@ -1913,7 +2002,7 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
 
              {/* Create/Edit Shift Dialog */}
        <Dialog open={showCreateShiftDialog} onClose={() => setShowCreateShiftDialog(false)} maxWidth="sm" fullWidth>
-         <DialogTitle>{createShiftData.shift_template ? 'Edit Shift' : 'Create New Shift'}</DialogTitle>
+         <DialogTitle>{createShiftData.editingShiftId ? 'Edit Shift' : 'Create New Shift'}</DialogTitle>
          <DialogContent>
            <Box sx={{ pt: 2 }}>
              <TextField
@@ -2034,7 +2123,7 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
               disabled={createShiftLoading || !createShiftData.date || !createShiftData.shift_template || !createShiftData.start_time || !createShiftData.end_time || !createShiftData.duration_hours}
               startIcon={createShiftLoading ? <CircularProgress size={16} /> : null}
             >
-              {createShiftLoading ? (createShiftData.shift_template ? 'Updating...' : 'Creating...') : (createShiftData.shift_template ? 'Update Shift' : 'Create Shift')}
+              {createShiftLoading ? (createShiftData.editingShiftId ? 'Updating...' : 'Creating...') : (createShiftData.editingShiftId ? 'Update Shift' : 'Create Shift')}
             </Button>
          </DialogActions>
        </Dialog>
