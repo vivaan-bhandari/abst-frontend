@@ -504,7 +504,7 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
         };
        
                try {
-          const response = await axios.post(`${API_BASE_URL}/api/scheduling/staff-assignments/`, requestData);
+          const response = await axios.post(`${API_BASE_URL}/api/scheduling/staff-assignments/?facility=${selectedFacility}`, requestData);
           
          // Update assignments state locally instead of full refresh
          const newAssignment = {
@@ -614,7 +614,7 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
               
               if (validation.valid) {
                 try {
-                  await axios.post(`${API_BASE_URL}/api/scheduling/staff-assignments/`, {
+                  await axios.post(`${API_BASE_URL}/api/scheduling/staff-assignments/?facility=${selectedFacility}`, {
                     staff: staffMember.id,
                     shift: shift.id,
                     assigned_role: role
@@ -734,14 +734,14 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
         
         if (existingShift) {
           // Update existing shift
-          response = await axios.put(`${API_BASE_URL}/api/scheduling/shifts/${existingShift.id}/`, requestData);
+          response = await axios.put(`${API_BASE_URL}/api/scheduling/shifts/${existingShift.id}/?facility=${selectedFacility}`, requestData);
         } else {
           // Create new shift if no existing shift found
-          response = await axios.post(`${API_BASE_URL}/api/scheduling/shifts/`, requestData);
+          response = await axios.post(`${API_BASE_URL}/api/scheduling/shifts/?facility=${selectedFacility}`, requestData);
         }
       } else {
         // Create new shift
-        response = await axios.post(`${API_BASE_URL}/api/scheduling/shifts/`, requestData);
+        response = await axios.post(`${API_BASE_URL}/api/scheduling/shifts/?facility=${selectedFacility}`, requestData);
       }
       
       // Close dialog and reset form
@@ -802,6 +802,9 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
     setCreateShiftData({
       date: shift.date,
       shift_template: shift.shift_template?.id || shift.shift_template || '',
+      start_time: shift.start_time || '',
+      end_time: shift.end_time || '',
+      duration_hours: shift.duration_hours || 0,
       notes: shift.notes || ''
     });
     setShowCreateShiftDialog(true);
@@ -810,7 +813,7 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
   // Handle shift deletion
   const handleDeleteShift = async (shiftId) => {
     try {
-      await axios.delete(`${API_BASE_URL}/api/scheduling/shifts/${shiftId}/`);
+      await axios.delete(`${API_BASE_URL}/api/scheduling/shifts/${shiftId}/?facility=${selectedFacility}`);
       // Refresh data after deletion
       await fetchData();
       if (onDataChange) onDataChange();
@@ -841,7 +844,7 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
       let deletedCount = 0;
       for (const shift of weekShifts) {
         try {
-          await axios.delete(`${API_BASE_URL}/api/scheduling/shifts/${shift.id}/`);
+          await axios.delete(`${API_BASE_URL}/api/scheduling/shifts/${shift.id}/?facility=${selectedFacility}`);
           deletedCount++;
         } catch (error) {
           console.error(`Failed to delete shift ${shift.id}:`, error);
@@ -1049,7 +1052,7 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
                 let deletedCount = 0;
                 for (const assignment of assignments) {
                   try {
-                    await axios.delete(`${API_BASE_URL}/api/scheduling/staff-assignments/${assignment.id}/`);
+                    await axios.delete(`${API_BASE_URL}/api/scheduling/staff-assignments/${assignment.id}/?facility=${selectedFacility}`);
                     deletedCount++;
                   } catch (error) {
                     console.error(`Failed to delete assignment ${assignment.id}:`, error);
