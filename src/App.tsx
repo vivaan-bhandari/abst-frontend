@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Box, CssBaseline } from '@mui/material';
+import Login from './components/Auth/Login';
+import Register from './components/Auth/Register';
+import WelcomeScreen from './components/Auth/WelcomeScreen';
 import Dashboard from './components/Dashboard/Dashboard';
 import FacilityPage from './components/Facility/FacilityPage';
 import FacilitySectionDetails from './components/Facility/FacilitySectionDetails';
-import Login from './components/Auth/Login';
-import Register from './components/Auth/Register';
-import FacilityAccessRequest from './components/Auth/FacilityAccessRequest';
 import AccessManagement from './components/Auth/AccessManagement';
-import WelcomeScreen from './components/Auth/WelcomeScreen';
 import ResidentDetails from './components/Dashboard/ResidentDetails';
+import ShiftScheduling from './components/Scheduling/ShiftScheduling';
+import { FacilityProvider } from './contexts/FacilityContext';
+import FacilityAccessRequest from './components/Auth/FacilityAccessRequest';
 import axios from 'axios';
 
+// Define User type inline since the types/user file doesn't exist
 interface User {
   id: number;
   username: string;
@@ -30,23 +33,24 @@ function App() {
   const [showAccessRequest, setShowAccessRequest] = useState(false);
 
   useEffect(() => {
-    // Check for existing authentication on app load
-    const savedToken = localStorage.getItem('authToken');
-    const savedUser = localStorage.getItem('user');
+    const storedToken = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
     
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
-      axios.defaults.headers.common['Authorization'] = `Token ${savedToken}`;
+    if (storedToken && storedUser) {
+      setToken(storedToken);
+      setUser(JSON.parse(storedUser));
       setShowWelcome(false);
+      // Set default auth header for all axios requests
+      axios.defaults.headers.common['Authorization'] = `Token ${storedToken}`;
     }
   }, []);
 
-  const handleLogin = (userData: User, authToken: string) => {
+  const handleLogin = (userData: User, userToken: string) => {
     setUser(userData);
-    setToken(authToken);
-    setAuthMode('login');
+    setToken(userToken);
     setShowWelcome(false);
+    localStorage.setItem('token', userToken);
+    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const handleRegister = (userData: User, authToken: string) => {
@@ -59,10 +63,11 @@ function App() {
   const handleLogout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-    delete axios.defaults.headers.common['Authorization'];
     setShowWelcome(true);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    // Clear axios auth header
+    delete axios.defaults.headers.common['Authorization'];
   };
 
   const handleSwitchToRegister = () => {
@@ -116,30 +121,32 @@ function App() {
 
   // Main authenticated app
   return (
-    <Box sx={{ display: 'flex' }}>
-      <CssBaseline />
-      <Routes>
-        <Route 
-          path="/" 
-          element={
-            <Dashboard 
-              user={user} 
-              onLogout={handleLogout}
-            />
-          } 
-        />
-        <Route path="/facility/:facilityId" element={<FacilityPage />} />
-        <Route path="/facility-section/:sectionId" element={<FacilitySectionDetails />} />
-        <Route 
-          path="/admin/access-management" 
-          element={<AccessManagement />} 
-        />
-        <Route path="/resident/:residentId" element={<ResidentDetails />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Box>
+    <FacilityProvider>
+      <Box sx={{ display: 'flex' }}>
+        <CssBaseline />
+        <Routes>
+          <Route 
+            path="/" 
+            element={
+              <Dashboard 
+                user={user} 
+                onLogout={handleLogout}
+              />
+            } 
+          />
+          <Route path="/facility/:facilityId" element={<FacilityPage />} />
+          <Route path="/facility-section/:sectionId" element={<FacilitySectionDetails />} />
+          <Route 
+            path="/admin/access-management" 
+            element={<AccessManagement />} 
+          />
+          <Route path="/resident/:residentId" element={<ResidentDetails />} />
+          <Route path="/scheduling" element={<ShiftScheduling />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Box>
+    </FacilityProvider>
   );
 }
 
 export default App;
-// Trigger Vercel rebuild

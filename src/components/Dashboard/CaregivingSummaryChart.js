@@ -15,7 +15,7 @@ import axios from 'axios';
 
 const COLORS = {
   Day: '#60a5fa',      // Light Blue (Day)
-  Eve: '#0d9488',      // Teal (Swing)
+  Swing: '#0d9488',    // Teal (Swing)
   NOC: '#8b5cf6',      // Purple (NOC)
 };
 
@@ -29,9 +29,26 @@ const CaregivingSummaryChart = ({ title, endpoint, queryParams = {} }) => {
       try {
         setLoading(true);
         setError(null);
+        
+        // Get authentication token
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setError('No authentication token found');
+          setLoading(false);
+          return;
+        }
+        
+        // Set authorization header
+        const config = {
+          headers: {
+            'Authorization': `Token ${token}`
+          }
+        };
+        
         const params = new URLSearchParams(queryParams);
         const url = params.toString() ? `${endpoint}?${params.toString()}` : endpoint;
-        const response = await axios.get(url);
+        const response = await axios.get(url, config);
+        console.log('DEBUG: Caregiving summary data received:', response.data);
         setData(response.data);
       } catch (err) {
         console.error('Error fetching caregiving summary:', err);
@@ -72,12 +89,14 @@ const CaregivingSummaryChart = ({ title, endpoint, queryParams = {} }) => {
 
   // Section-level: per_shift data present
   if (data.per_shift) {
+    console.log('DEBUG: Processing per_shift data:', data.per_shift);
     const chartData = data.per_shift.map(day => ({
       day: day.day,
       Day: day.Day,
-      Eve: day.Eve,
+      Swing: day.Swing,
       NOC: day.NOC,
     }));
+    console.log('DEBUG: Chart data prepared:', chartData);
     return (
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom sx={{ textAlign: 'center', fontWeight: 600, fontSize: 22 }}>{title}</Typography>
@@ -93,7 +112,7 @@ const CaregivingSummaryChart = ({ title, endpoint, queryParams = {} }) => {
             <Tooltip formatter={(value, name) => [`${Math.round(value * 100) / 100} hours`, name]} />
             <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 16 }} />
             <Bar dataKey="Day" stackId="a" fill={COLORS.Day} name="Day" barSize={40} />
-            <Bar dataKey="Eve" stackId="a" fill={COLORS.Eve} name="Swing" barSize={40} />
+            <Bar dataKey="Swing" stackId="a" fill={COLORS.Swing} name="Swing" barSize={40} />
             <Bar dataKey="NOC" stackId="a" fill={COLORS.NOC} name="NOC" barSize={40} />
           </BarChart>
         </ResponsiveContainer>

@@ -71,7 +71,7 @@ const Register = ({ onRegister, onSwitchToLogin }) => {
       const { token, user } = loginResponse.data;
       
       // Store token in localStorage
-      localStorage.setItem('authToken', token);
+      localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       
       // Set default auth header for future requests

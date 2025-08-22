@@ -27,6 +27,7 @@ import {
 import axios from 'axios';
 import { API_BASE_URL } from '../../config';
 import CaregivingSummaryChart from './CaregivingSummaryChart';
+import { useFacility } from '../../contexts/FacilityContext';
 
 const days = [
   'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
@@ -53,6 +54,10 @@ const ResidentDetails = () => {
   const [modalError, setModalError] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
   const [statusSaving, setStatusSaving] = useState(false);
+
+  // Use global facility context
+  const { selectedFacility, getCurrentFacility } = useFacility();
+  const currentFacility = getCurrentFacility();
 
   useEffect(() => {
     fetchAll();
@@ -267,12 +272,12 @@ const ResidentDetails = () => {
             </FormControl>
           </Box>
           <Typography>Facility Section: {resident.facility_section}</Typography>
-          <Typography>Facility: {resident.facility_name} (ID: {resident.facility_id})</Typography>
+          <Typography>Facility: {currentFacility ? currentFacility.name : 'Loading...'} (ID: {selectedFacility || 'Not selected'})</Typography>
         </Paper>
 
         {/* Caregiving Summary Chart */}
         <CaregivingSummaryChart 
-          title={`Caregiving Time Summary - ${resident?.first_name} ${resident?.last_name}`}
+          title={`Caregiving Time Summary - ${currentFacility ? currentFacility.name : 'Facility'} - ${resident?.name || 'Resident'}`}
           endpoint={`${API_BASE_URL}/api/residents/${resident.id}/caregiving_summary/`}
         />
 

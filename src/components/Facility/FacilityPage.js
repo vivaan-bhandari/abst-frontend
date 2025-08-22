@@ -1,41 +1,62 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
   Paper,
+  Grid,
+  Card,
+  CardContent,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Alert,
+  CircularProgress,
+  Container,
+  IconButton,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Button,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Alert,
-  Grid,
-  Container,
+  Chip,
   Tabs,
   Tab,
+  FormControl,
+  InputLabel,
+  Select,
   MenuItem,
-  Snackbar,
+  DialogContentText,
   Stack,
+  Snackbar,
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import {
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Add as AddIcon,
+  Upload as UploadIcon,
+  Download as DownloadIcon,
+  Business as BusinessIcon,
+  People as PeopleIcon,
+  Settings as SettingsIcon,
+  ArrowBack as ArrowBackIcon,
+} from '@mui/icons-material';
 import axios from 'axios';
-import { useNavigate, useParams } from 'react-router-dom';
+import { API_BASE_URL } from '../../config';
+import { useFacility } from '../../contexts/FacilityContext';
+import CaregivingSummaryChart from '../Dashboard/CaregivingSummaryChart';
 import ADLList from '../Dashboard/ADLList';
 import ADLUpload from '../Dashboard/ADLUpload';
-import ADLAnalytics from '../Dashboard/Analytics';
-import CaregivingSummaryChart from '../Dashboard/CaregivingSummaryChart';
-import { API_BASE_URL } from '../../config';
+import Analytics from '../Dashboard/Analytics';
 
 const FacilityPage = () => {
   const { facilityId } = useParams();
   const navigate = useNavigate();
+  const { refreshFacilities, selectFacility } = useFacility();
   const [facility, setFacility] = useState(null);
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,7 +84,7 @@ const FacilityPage = () => {
 
   const [deleteResidentId, setDeleteResidentId] = useState(null);
 
-  const fetchFacility = useCallback(async () => {
+  const fetchFacility = async () => {
     setLoading(true);
     try {
       const res = await axios.get(`${API_BASE_URL}/api/facilities/${facilityId}/`);
@@ -77,9 +98,9 @@ const FacilityPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [facilityId]);
+  };
 
-  const fetchResidents = useCallback(async () => {
+  const fetchResidents = async () => {
     if (!facilityId) return;
     try {
       // Get all residents without pagination
@@ -93,14 +114,16 @@ const FacilityPage = () => {
       console.error('Error response:', err.response?.data);
       setResidents([]);
     }
-  }, [facilityId]);
+  };
 
   useEffect(() => {
     if (facilityId) {
+      // Update the global facility context when this page loads
+      selectFacility(facilityId);
       fetchFacility();
       fetchResidents();
     }
-  }, [facilityId, fetchFacility, fetchResidents]);
+  }, [facilityId, selectFacility]);
 
   const validateEmail = (email) => {
     if (!email) return '';
@@ -136,6 +159,7 @@ const FacilityPage = () => {
         state,
         zip_code
       } = facilityForm;
+      
       const payload = {
         name,
         facility_type,
@@ -148,11 +172,14 @@ const FacilityPage = () => {
         state,
         zip_code
       };
-      await axios.put(`${API_BASE_URL}/api/facilities/${facility.id}/`, payload);
-      setFacility({ ...facility, ...payload });
+      
+      await axios.patch(`${API_BASE_URL}/api/facilities/${facilityId}/`, payload);
       setEditMode(false);
+      fetchFacility();
+      refreshFacilities(); // Refresh global facility list
     } catch (err) {
-      setError('Failed to update facility info');
+      console.error('Error saving facility:', err);
+      setError('Failed to save facility changes');
     }
   };
 
@@ -186,6 +213,7 @@ const FacilityPage = () => {
       setSectionForm({ name: '' });
       setSectionError('');
       fetchFacility();
+      refreshFacilities(); // Refresh global facility list
     } catch (err) {
       setSectionError('Failed to add section');
     }
@@ -216,6 +244,7 @@ const FacilityPage = () => {
       });
       fetchFacility();
       setSectionEditDialogOpen(false);
+      refreshFacilities(); // Refresh global facility list
     } catch (err) {
       setSectionError('Failed to update section');
     }
@@ -236,6 +265,7 @@ const FacilityPage = () => {
       await axios.delete(`${API_BASE_URL}/api/facilitysections/${sectionToDelete.id}/`);
       fetchFacility();
       setSectionDeleteDialogOpen(false);
+      refreshFacilities(); // Refresh global facility list
     } catch (err) {
       setSectionError('Failed to delete section');
     }
@@ -265,6 +295,7 @@ const FacilityPage = () => {
       setNewResident({ name: '', section: '' });
       setAddError('');
       fetchResidents();
+      refreshFacilities(); // Refresh global facility list
     } catch (err) {
       console.error('Error adding resident:', err);
       setAddError('Failed to add resident.');
@@ -284,6 +315,7 @@ const FacilityPage = () => {
       setImportOpen(false);
       setImportFile(null);
       fetchResidents();
+      refreshFacilities(); // Refresh global facility list
     } catch (err) {
       console.error('Import error:', err);
       const errorMessage = err.response?.data?.message || 'Import failed. Please check your file format.';
@@ -296,6 +328,7 @@ const FacilityPage = () => {
       await axios.delete(`${API_BASE_URL}/api/residents/${deleteResidentId}/`);
       setDeleteResidentId(null);
       fetchResidents();
+      refreshFacilities(); // Refresh global facility list
     } catch (err) {
       alert('Failed to delete resident');
     }
@@ -578,7 +611,7 @@ const FacilityPage = () => {
         <ADLUpload facilityId={facilityId} />
       )}
       {tab === 3 && (
-        <ADLAnalytics facilityId={facilityId} />
+        <Analytics facilityId={facilityId} />
       )}
     </Container>
   );

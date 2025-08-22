@@ -41,7 +41,9 @@ import Analytics from './Analytics';
 import FacilityAccessRequest from '../Auth/FacilityAccessRequest';
 import AccessManagement from '../Auth/AccessManagement';
 import CaregivingSummaryChart from './CaregivingSummaryChart';
+import ShiftScheduling from '../Scheduling/ShiftScheduling';
 import { API_BASE_URL } from '../../config';
+import { useFacility } from '../../contexts/FacilityContext';
 
 const Dashboard = ({ user, onLogout }) => {
   const navigate = useNavigate();
@@ -49,13 +51,15 @@ const Dashboard = ({ user, onLogout }) => {
   const [stats, setStats] = useState({
     totalResidents: 0,
     totalADLs: 0,
-    totalHours: 0,
   });
   const [loading, setLoading] = useState(true);
   const [anchorEl, setAnchorEl] = useState(null);
   const [showAccessRequest, setShowAccessRequest] = useState(false);
   const [hasFacilityAccess, setHasFacilityAccess] = useState(true);
   const [userAccess, setUserAccess] = useState([]);
+  
+  // Use facility context to get selected facility
+  const { selectedFacility, facilities } = useFacility();
 
   useEffect(() => {
     fetchStats();
@@ -70,20 +74,25 @@ const Dashboard = ({ user, onLogout }) => {
       }
     };
     checkAccess();
-  }, [user]);
+  }, [user, selectedFacility]);
 
   const fetchStats = async () => {
     setLoading(true);
     try {
+      // Build query parameters for facility filtering
+      const params = {};
+      if (selectedFacility) {
+        params.facility_id = selectedFacility.id;
+      }
+
       const [adlsResponse, residentsResponse] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/adls/summary/`),
-        axios.get(`${API_BASE_URL}/api/residents/`),
+        axios.get(`${API_BASE_URL}/api/adls/summary/`, { params }),
+        axios.get(`${API_BASE_URL}/api/residents/`, { params }),
       ]);
 
       setStats({
         totalResidents: residentsResponse.data.count || 0,
         totalADLs: adlsResponse.data.total_adls || 0,
-        totalHours: adlsResponse.data.total_hours || 0,
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -220,56 +229,23 @@ const Dashboard = ({ user, onLogout }) => {
       </Menu>
 
       <Container maxWidth="xl" sx={{ mt: 3 }}>
-        {/* Statistics Cards */}
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={4}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Total Residents
-                </Typography>
-                <Typography variant="h4">
-                  {loading ? '...' : stats.totalResidents}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Total ADL Records
-                </Typography>
-                <Typography variant="h4">
-                  {loading ? '...' : stats.totalADLs}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Total Care Hours
-                </Typography>
-                <Typography variant="h4">
-                  {loading ? '...' : `${stats.totalHours.toFixed(1)}h`}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-
         {/* Caregiving Summary Chart */}
         <CaregivingSummaryChart 
-          title="Caregiving Time Summary - All Facilities"
+          title={selectedFacility && facilities.find(f => f.id === selectedFacility)
+            ? `Caregiving Time Summary - ${facilities.find(f => f.id === selectedFacility).name}`
+            : "Caregiving Time Summary - All Facilities"
+          }
           endpoint={`${API_BASE_URL}/api/adls/caregiving_summary/`}
+          queryParams={selectedFacility && facilities.find(f => f.id === selectedFacility) ? { facility_id: selectedFacility } : {}}
         />
+        
+
 
         {/* Main Content Tabs */}
         <Paper sx={{ width: '100%' }}>
           <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 3 }}>
             <Tab label="Facility" />
+            <Tab label="Scheduling" />
             {user.is_staff || user.role === 'admin' || user.role === 'superadmin' ? (
               <Tab label="Admin" />
             ) : null}
@@ -277,7 +253,8 @@ const Dashboard = ({ user, onLogout }) => {
 
           <Box sx={{ p: 3 }}>
             {tab === 0 && <FacilityList />}
-            {tab === 1 && (user.is_staff || user.role === 'admin' || user.role === 'superadmin') && <AccessManagement />}
+            {tab === 1 && <ShiftScheduling />}
+            {tab === 2 && (user.is_staff || user.role === 'admin' || user.role === 'superadmin') && <AccessManagement />}
           </Box>
         </Paper>
       </Container>
