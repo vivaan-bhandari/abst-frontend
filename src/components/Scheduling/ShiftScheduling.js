@@ -200,15 +200,31 @@ const ShiftScheduling = () => {
                   value={selectedFacility || ''}
                   onChange={(e) => selectFacility(e.target.value)}
                   label="Select Facility"
+                  open={true} // Force open to see if items render
                 >
-                  {facilities.map((facility) => (
-                    <MenuItem key={facility.id} value={facility.id}>
-                      {facility.name}
-                      {facility.city && facility.state && ` - ${facility.city}, ${facility.state}`}
-                    </MenuItem>
-                  ))}
+                  {facilities.map((facility, index) => {
+                    console.log(`Rendering facility ${index}:`, facility);
+                    return (
+                      <MenuItem key={facility.id} value={facility.id}>
+                        {facility.name}
+                        {facility.city && facility.state && ` - ${facility.city}, ${facility.state}`}
+                      </MenuItem>
+                    );
+                  })}
                 </Select>
               </FormControl>
+              
+              {/* Debug: Show facilities as text to confirm they exist */}
+              <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1, maxWidth: 400 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Debug - Available Facilities:
+                </Typography>
+                {facilities.map((facility, index) => (
+                  <Typography key={facility.id} variant="body2" sx={{ mt: 0.5 }}>
+                    {index + 1}. {facility.name} (ID: {facility.id})
+                  </Typography>
+                ))}
+              </Box>
               <Typography variant="caption" color="text.secondary">
                 {facilities.length} facility{facilities.length !== 1 ? 's' : ''} available
               </Typography>
