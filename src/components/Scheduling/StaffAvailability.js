@@ -84,9 +84,14 @@ const StaffAvailability = ({ selectedFacility, onDataChange }) => {
   ];
 
   useEffect(() => {
+    console.log('🔍 DEBUG: StaffAvailability useEffect - selectedFacility:', selectedFacility);
+    console.log('🔍 DEBUG: StaffAvailability useEffect - selectedFacility type:', typeof selectedFacility);
+    
     if (selectedFacility) {
       fetchData();
       fetchWeeklySummary();
+    } else {
+      console.log('🔍 DEBUG: No selectedFacility, skipping data fetch');
     }
   }, [selectedFacility, selectedDate]);
 
@@ -176,6 +181,11 @@ const StaffAvailability = ({ selectedFacility, onDataChange }) => {
     setError(null);
 
     try {
+      // Debug logging
+      console.log('🔍 DEBUG: selectedFacility value:', selectedFacility);
+      console.log('🔍 DEBUG: selectedFacility type:', typeof selectedFacility);
+      console.log('🔍 DEBUG: API URL will be:', `${API_BASE_URL}/api/scheduling/staff-availability/?facility=${selectedFacility}`);
+
       const data = {
         staff: selectedStaff,
         date: selectedDate.toISOString().split('T')[0],
@@ -186,6 +196,8 @@ const StaffAvailability = ({ selectedFacility, onDataChange }) => {
         preferred_shifts: preferredShifts,
         notes: notes,
       };
+
+      console.log('🔍 DEBUG: Request data being sent:', data);
 
       if (editingAvailability) {
         await axios.put(
