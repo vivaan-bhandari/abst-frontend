@@ -348,8 +348,10 @@ const StaffAvailability = ({ selectedFacility, onDataChange }) => {
                     .filter(item => new Date(item.date).toDateString() === selectedDate.toDateString())
                     .map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell>{item.staff_name}</TableCell>
-                        <TableCell>{item.staff_role}</TableCell>
+                        <TableCell>
+                          {item.staff?.first_name} {item.staff?.last_name}
+                        </TableCell>
+                        <TableCell>{item.staff?.role}</TableCell>
                         <TableCell>
                           <Chip
                             label={getStatusLabel(item.availability_status)}
