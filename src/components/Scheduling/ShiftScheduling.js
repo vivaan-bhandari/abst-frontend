@@ -157,6 +157,12 @@ const ShiftScheduling = () => {
   }
 
   if (!selectedFacility) {
+    console.log('Rendering facility selection UI');
+    console.log('Facilities array:', facilities);
+    console.log('Facilities type:', typeof facilities);
+    console.log('Facilities length:', facilities?.length);
+    console.log('Facilities is array:', Array.isArray(facilities));
+    
     return (
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         <Paper sx={{ p: 3, textAlign: 'center' }}>
@@ -183,17 +189,11 @@ const ShiftScheduling = () => {
                 Retry
               </Button>
             </Box>
-          ) : facilities.length === 0 ? (
+          ) : facilities && facilities.length > 0 ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-              <Alert severity="info">
-                You don't have access to any facilities yet. Please contact an administrator to request access.
-              </Alert>
-              <Button variant="outlined" onClick={() => window.location.reload()}>
-                Refresh
-              </Button>
-            </Box>
-          ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Debug: Found {facilities.length} facilities
+              </Typography>
               <FormControl fullWidth sx={{ maxWidth: 400 }}>
                 <InputLabel>Select Facility</InputLabel>
                 <Select
@@ -214,6 +214,18 @@ const ShiftScheduling = () => {
               </Typography>
               <Button variant="outlined" size="small" onClick={() => window.location.reload()}>
                 Refresh Facilities
+              </Button>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <Alert severity="info">
+                You don't have access to any facilities yet. Please contact an administrator to request access.
+              </Alert>
+              <Typography variant="body2" color="text.secondary">
+                Debug: facilities = {JSON.stringify(facilities)}
+              </Typography>
+              <Button variant="outlined" onClick={() => window.location.reload()}>
+                Refresh
               </Button>
             </Box>
           )}
