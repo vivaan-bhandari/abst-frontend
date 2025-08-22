@@ -125,12 +125,38 @@ export const FacilityProvider = ({ children }) => {
       } catch (fallbackError) {
         console.error('Fallback also failed:', fallbackError);
         console.error('Fallback error details:', fallbackError.response?.data || fallbackError.message);
-        // Set some default facilities for testing
-        setFacilities([
-          { id: 1, name: 'Buena Vista', city: 'San Diego', state: 'CA' },
-          { id: 2, name: 'Murray Highland', city: 'San Diego', state: 'CA' },
-          { id: 3, name: 'La Posada Senior Living', city: 'San Diego', state: 'CA' }
-        ]);
+        
+        // Try the debug endpoint as a last resort
+        try {
+          console.log('Trying debug endpoint as last resort');
+          const debugResponse = await axios.get(`${API_BASE_URL}/api/facilities/debug_list/`);
+          const debugFacilities = debugResponse.data.facilities || [];
+          console.log('Debug endpoint facilities:', debugFacilities);
+          
+          const processedDebugFacilities = debugFacilities.map(facility => ({
+            id: facility.id,
+            name: facility.name,
+            address: facility.address,
+            city: facility.city,
+            state: facility.state,
+            zip_code: facility.zip_code,
+            phone: facility.phone,
+            email: facility.email,
+            facility_type: facility.facility_type,
+            facility_id: facility.facility_id,
+            admin_name: facility.admin_name
+          }));
+          
+          setFacilities(processedDebugFacilities);
+        } catch (debugError) {
+          console.error('Debug endpoint also failed:', debugError);
+          // Set some default facilities for testing
+          setFacilities([
+            { id: 1, name: 'Buena Vista', city: 'San Diego', state: 'CA' },
+            { id: 2, name: 'Murray Highland', city: 'San Diego', state: 'CA' },
+            { id: 3, name: 'La Posada Senior Living', city: 'San Diego', state: 'CA' }
+          ]);
+        }
       }
     } finally {
       setLoading(false);
