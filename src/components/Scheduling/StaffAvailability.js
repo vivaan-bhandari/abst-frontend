@@ -106,8 +106,17 @@ const StaffAvailability = ({ selectedFacility, onDataChange }) => {
         axios.get(`${API_BASE_URL}/api/scheduling/staff/?facility=${selectedFacility}`),
       ]);
 
-      setAvailability(availabilityRes.data.results || availabilityRes.data || []);
-      setStaff(staffRes.data.results || staffRes.data || []);
+      console.log('🔍 DEBUG: Availability response:', availabilityRes.data);
+      console.log('🔍 DEBUG: Staff response:', staffRes.data);
+      
+      const availabilityData = availabilityRes.data.results || availabilityRes.data || [];
+      const staffData = staffRes.data.results || staffRes.data || [];
+      
+      console.log('🔍 DEBUG: Processed availability data:', availabilityData);
+      console.log('🔍 DEBUG: Processed staff data:', staffData);
+      
+      setAvailability(availabilityData);
+      setStaff(staffData);
     } catch (error) {
       console.error('Error fetching availability data:', error);
       setError('Failed to load availability data');
@@ -344,8 +353,22 @@ const StaffAvailability = ({ selectedFacility, onDataChange }) => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
+                  {/* Debug info */}
+                  <TableRow>
+                    <TableCell colSpan={8} sx={{ backgroundColor: '#f5f5f5', fontFamily: 'monospace', fontSize: '12px' }}>
+                      🔍 DEBUG: Total availability records: {availability.length} | 
+                      Selected date: {selectedDate?.toDateString()} | 
+                      Available dates: {availability.map(item => new Date(item.date).toDateString()).join(', ')}
+                    </TableCell>
+                  </TableRow>
+                  
                   {availability
-                    .filter(item => new Date(item.date).toDateString() === selectedDate.toDateString())
+                    .filter(item => {
+                      const itemDate = new Date(item.date).toDateString();
+                      const selectedDateStr = selectedDate.toDateString();
+                      console.log(`🔍 DEBUG: Comparing dates - Item: ${itemDate}, Selected: ${selectedDateStr}, Match: ${itemDate === selectedDateStr}`);
+                      return itemDate === selectedDateStr;
+                    })
                     .map((item) => (
                       <TableRow key={item.id}>
                         <TableCell>
