@@ -175,13 +175,23 @@ const ShiftScheduling = () => {
               </Typography>
             </Box>
           ) : facilitiesError ? (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {facilitiesError}
-            </Alert>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {facilitiesError}
+              </Alert>
+              <Button variant="outlined" onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            </Box>
           ) : facilities.length === 0 ? (
-            <Alert severity="info">
-              You don't have access to any facilities yet. Please contact an administrator to request access.
-            </Alert>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <Alert severity="info">
+                You don't have access to any facilities yet. Please contact an administrator to request access.
+              </Alert>
+              <Button variant="outlined" onClick={() => window.location.reload()}>
+                Refresh
+              </Button>
+            </Box>
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
               <FormControl fullWidth sx={{ maxWidth: 400 }}>
@@ -202,6 +212,9 @@ const ShiftScheduling = () => {
               <Typography variant="caption" color="text.secondary">
                 {facilities.length} facility{facilities.length !== 1 ? 's' : ''} available
               </Typography>
+              <Button variant="outlined" size="small" onClick={() => window.location.reload()}>
+                Refresh Facilities
+              </Button>
             </Box>
           )}
         </Paper>

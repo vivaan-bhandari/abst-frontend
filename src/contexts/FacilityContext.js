@@ -36,6 +36,36 @@ export const FacilityProvider = ({ children }) => {
       setError(null);
       
       console.log('Fetching facilities from:', `${API_BASE_URL}/api/facility-access/my_access/`);
+      console.log('Current API base URL:', API_BASE_URL);
+      
+      // Check if user is authenticated
+      const token = localStorage.getItem('token');
+      console.log('Authentication token:', token ? 'Present' : 'Missing');
+      
+      if (!token) {
+        console.log('No authentication token found, trying fallback');
+        // Try to get all facilities without authentication
+        const fallbackResponse = await axios.get(`${API_BASE_URL}/api/facilities/`);
+        const allFacilities = fallbackResponse.data.results || fallbackResponse.data || [];
+        console.log('Fallback facilities (no auth):', allFacilities);
+        
+        const processedFacilities = allFacilities.map(facility => ({
+          id: facility.id,
+          name: facility.name,
+          address: facility.address,
+          city: facility.city,
+          state: facility.state,
+          zip_code: facility.zip_code,
+          phone: facility.phone,
+          email: facility.email,
+          facility_type: facility.facility_type,
+          facility_id: facility.facility_id,
+          admin_name: facility.admin_name
+        }));
+        
+        setFacilities(processedFacilities);
+        return;
+      }
       
       // Get facilities the user has access to
       const response = await axios.get(`${API_BASE_URL}/api/facility-access/my_access/`);
@@ -67,6 +97,7 @@ export const FacilityProvider = ({ children }) => {
       
     } catch (error) {
       console.error('Error fetching user facilities:', error);
+      console.error('Error details:', error.response?.data || error.message);
       setError('Failed to load your accessible facilities');
       
       // Fallback: try to get all facilities if the user access call fails
@@ -93,6 +124,7 @@ export const FacilityProvider = ({ children }) => {
         setFacilities(processedFacilities);
       } catch (fallbackError) {
         console.error('Fallback also failed:', fallbackError);
+        console.error('Fallback error details:', fallbackError.response?.data || fallbackError.message);
         // Set some default facilities for testing
         setFacilities([
           { id: 1, name: 'Buena Vista', city: 'San Diego', state: 'CA' },
