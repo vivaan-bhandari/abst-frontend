@@ -55,10 +55,15 @@ const ShiftScheduling = () => {
   const { selectedFacility, facilities, selectFacility, loading: facilitiesLoading, error: facilitiesError } = useFacility();
 
   useEffect(() => {
+    console.log('ShiftScheduling - Facilities:', facilities);
+    console.log('ShiftScheduling - Selected Facility:', selectedFacility);
+    console.log('ShiftScheduling - Loading:', facilitiesLoading);
+    console.log('ShiftScheduling - Error:', facilitiesError);
+    
     if (selectedFacility) {
       fetchStats();
     }
-  }, [selectedFacility]);
+  }, [selectedFacility, facilities, facilitiesLoading, facilitiesError]);
 
   const fetchStats = async () => {
     if (!selectedFacility) return;
@@ -161,25 +166,43 @@ const ShiftScheduling = () => {
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
             Choose a facility from the dropdown above to manage scheduling
           </Typography>
-          {facilities.length === 0 ? (
+          
+          {facilitiesLoading ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <CircularProgress />
+              <Typography variant="body2" color="text.secondary">
+                Loading facilities...
+              </Typography>
+            </Box>
+          ) : facilitiesError ? (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {facilitiesError}
+            </Alert>
+          ) : facilities.length === 0 ? (
             <Alert severity="info">
               You don't have access to any facilities yet. Please contact an administrator to request access.
             </Alert>
           ) : (
-            <FormControl fullWidth sx={{ maxWidth: 400 }}>
-              <InputLabel>Select Facility</InputLabel>
-              <Select
-                value={selectedFacility}
-                onChange={(e) => selectFacility(e.target.value)}
-                label="Select Facility"
-              >
-                {facilities.map((facility) => (
-                  <MenuItem key={facility.id} value={facility.id}>
-                    {facility.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <FormControl fullWidth sx={{ maxWidth: 400 }}>
+                <InputLabel>Select Facility</InputLabel>
+                <Select
+                  value={selectedFacility || ''}
+                  onChange={(e) => selectFacility(e.target.value)}
+                  label="Select Facility"
+                >
+                  {facilities.map((facility) => (
+                    <MenuItem key={facility.id} value={facility.id}>
+                      {facility.name}
+                      {facility.city && facility.state && ` - ${facility.city}, ${facility.state}`}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Typography variant="caption" color="text.secondary">
+                {facilities.length} facility{facilities.length !== 1 ? 's' : ''} available
+              </Typography>
+            </Box>
           )}
         </Paper>
       </Container>
