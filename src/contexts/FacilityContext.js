@@ -71,25 +71,35 @@ export const FacilityProvider = ({ children }) => {
       const response = await axios.get(`${API_BASE_URL}/api/facility-access/my_access/`);
       
       console.log('Facility access response:', response.data);
+      console.log('First facility item structure:', response.data[0]);
       
       const userFacilities = response.data || [];
       
       // Extract facility information from the access list
-      const accessibleFacilities = userFacilities.map(access => ({
-        id: access.facility.id,
-        name: access.facility.name,
-        address: access.facility.address,
-        city: access.facility.city,
-        state: access.facility.state,
-        zip_code: access.facility.zip_code,
-        phone: access.facility.phone,
-        email: access.facility.email,
-        facility_type: access.facility.facility_type,
-        facility_id: access.facility.facility_id,
-        admin_name: access.facility.admin_name
-      }));
+      const accessibleFacilities = userFacilities.map((access, index) => {
+        console.log(`Processing facility access ${index}:`, access);
+        console.log(`Facility object in access:`, access.facility);
+        
+        // Handle different possible response structures
+        let facilityData = access.facility || access;
+        
+        return {
+          id: facilityData.id || facilityData.facility_id,
+          name: facilityData.name,
+          address: facilityData.address,
+          city: facilityData.city,
+          state: facilityData.state,
+          zip_code: facilityData.zip_code,
+          phone: facilityData.phone,
+          email: facilityData.email,
+          facility_type: facilityData.facility_type,
+          facility_id: facilityData.facility_id,
+          admin_name: facilityData.admin_name
+        };
+      });
       
       console.log('Processed facilities:', accessibleFacilities);
+      console.log('First processed facility:', accessibleFacilities[0]);
       
       setFacilities(accessibleFacilities);
       
