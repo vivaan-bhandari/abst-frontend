@@ -70,6 +70,9 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
   const [createShiftData, setCreateShiftData] = useState({
     date: '',
     shift_template: '',
+    start_time: '',
+    end_time: '',
+    duration_hours: 0,
     notes: ''
   });
   const [createShiftLoading, setCreateShiftLoading] = useState(false);
@@ -691,7 +694,7 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
 
   // Create/Update shift function
   const handleCreateShift = async () => {
-    if (!createShiftData.date || !createShiftData.shift_template) {
+    if (!createShiftData.date || !createShiftData.shift_template || !createShiftData.start_time || !createShiftData.end_time || !createShiftData.duration_hours) {
       setError('Please fill in all required fields');
       return;
     }
@@ -711,6 +714,9 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
       const requestData = {
         date: formattedDate,
         shift_template: parseInt(shiftTemplateId),
+        start_time: createShiftData.start_time,
+        end_time: createShiftData.end_time,
+        duration_hours: createShiftData.duration_hours,
         notes: createShiftData.notes || ''
       };
       
@@ -740,7 +746,7 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
       
       // Close dialog and reset form
       setShowCreateShiftDialog(false);
-      setCreateShiftData({ date: '', shift_template: '', notes: '' });
+      setCreateShiftData({ date: '', shift_template: '', start_time: '', end_time: '', duration_hours: 0, notes: '' });
       
       // Refresh data to show new/updated shift
       await fetchData();
@@ -782,6 +788,9 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
     setCreateShiftData({
       date: date.toISOString().split('T')[0],
       shift_template: '',
+      start_time: '',
+      end_time: '',
+      duration_hours: 0,
       notes: `${shiftType} shift`
     });
     setShowCreateShiftDialog(true);
@@ -1922,7 +1931,21 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
                 <Select
                   value={createShiftData.shift_template}
                   onChange={(e) => {
-                    setCreateShiftData({ ...createShiftData, shift_template: e.target.value });
+                    const selectedTemplateId = e.target.value;
+                    setCreateShiftData({ ...createShiftData, shift_template: selectedTemplateId });
+                    
+                    // Auto-populate time fields if a template is selected
+                    if (selectedTemplateId) {
+                      const selectedTemplate = shiftTemplates.find(t => t.id === selectedTemplateId);
+                      if (selectedTemplate) {
+                        setCreateShiftData(prev => ({
+                          ...prev,
+                          start_time: selectedTemplate.start_time || '',
+                          end_time: selectedTemplate.end_time || '',
+                          duration_hours: selectedTemplate.duration_hours || 0
+                        }));
+                      }
+                    }
                   }}
                   label="Shift Template *"
                   required
@@ -1943,6 +1966,48 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
                 )}
               </FormControl>
               
+              {/* Time fields */}
+              <Grid container spacing={2} sx={{ mb: 2 }}>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="Start Time *"
+                    type="time"
+                    value={createShiftData.start_time}
+                    onChange={(e) => setCreateShiftData({ ...createShiftData, start_time: e.target.value })}
+                    InputLabelProps={{ shrink: true }}
+                    required
+                    error={!createShiftData.start_time}
+                    helperText={!createShiftData.start_time ? 'Start time is required' : ''}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="End Time *"
+                    type="time"
+                    value={createShiftData.end_time}
+                    onChange={(e) => setCreateShiftData({ ...createShiftData, end_time: e.target.value })}
+                    InputLabelProps={{ shrink: true }}
+                    required
+                    error={!createShiftData.end_time}
+                    helperText={!createShiftData.end_time ? 'End time is required' : ''}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="Duration (hours) *"
+                    type="number"
+                    value={createShiftData.duration_hours}
+                    onChange={(e) => setCreateShiftData({ ...createShiftData, duration_hours: parseFloat(e.target.value) || 0 })}
+                    required
+                    error={!createShiftData.duration_hours}
+                    helperText={!createShiftData.duration_hours ? 'Duration is required' : ''}
+                    inputProps={{ min: 0, step: 0.5 }}
+                  />
+                </Grid>
+              </Grid>
 
              
              <TextField
@@ -1963,7 +2028,7 @@ const PlannerGrid = ({ onDataChange, selectedFacility }) => {
                        <Button 
               onClick={handleCreateShift} 
               variant="contained" 
-              disabled={createShiftLoading || !createShiftData.date || !createShiftData.shift_template}
+              disabled={createShiftLoading || !createShiftData.date || !createShiftData.shift_template || !createShiftData.start_time || !createShiftData.end_time || !createShiftData.duration_hours}
               startIcon={createShiftLoading ? <CircularProgress size={16} /> : null}
             >
               {createShiftLoading ? (createShiftData.shift_template ? 'Updating...' : 'Creating...') : (createShiftData.shift_template ? 'Update Shift' : 'Create Shift')}
