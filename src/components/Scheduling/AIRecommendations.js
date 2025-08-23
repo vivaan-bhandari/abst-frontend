@@ -156,10 +156,16 @@ const AIRecommendations = ({ onDataChange }) => {
         params.append('section', selectedSection);
       }
       
+      console.log('Fetching weekly recommendations with params:', params.toString());
+      console.log('API URL:', `${API_BASE_URL}/api/scheduling/ai-recommendations/weekly_recommendations/?${params}`);
+      
       const response = await axios.get(
         `${API_BASE_URL}/api/scheduling/ai-recommendations/weekly_recommendations/?${params}`
       );
+      
+      console.log('Weekly recommendations response:', response.data);
       setWeeklyRecommendations(response.data.weekly_recommendations || []);
+      console.log('Set weekly recommendations:', response.data.weekly_recommendations || []);
     } catch (error) {
       console.error('Error fetching weekly recommendations:', error);
       setError('Failed to fetch weekly recommendations');
@@ -631,73 +637,66 @@ const AIRecommendations = ({ onDataChange }) => {
                     {/* Daily Recommendations */}
                     {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => {
                       const dayShort = day.slice(0, 3);
-                      const recommendation = weeklyRecommendations.find(rec => 
-                        rec.day === day && 
-                        rec.shift_type.toLowerCase() === shiftType
+                      // Fix: Backend returns day_name like 'Monday', 'Tuesday', etc.
+                      const dayRecommendation = weeklyRecommendations.find(rec => 
+                        rec.day_name === day
                       );
                       
-                      if (recommendation) {
-                        return (
-                          <Box key={day} sx={{ 
-                            border: '1px solid #e0e0e0',
-                            borderRadius: 1,
-                            p: 1.5,
-                            backgroundColor: '#f8f9fa',
-                            height: 100,
-                            position: 'relative'
-                          }}>
-                            {/* Confidence Badge */}
-                            <Chip
-                              label={`${recommendation.confidence_score}%`}
-                              color={getConfidenceColor(recommendation.confidence_score / 100)}
-                              size="small"
-                              sx={{ 
-                                position: 'absolute',
-                                top: 4,
-                                right: 4,
-                                fontSize: '0.7rem'
-                              }}
-                            />
-                            
-                            {/* Recommendation Content */}
-                            <Box sx={{ mt: 2 }}>
-                              <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-                                {recommendation.care_hours}h
+                      if (dayRecommendation) {
+                        // Find the specific shift type within this day's shifts
+                        const shiftRecommendation = dayRecommendation.shifts.find(shift => 
+                          shift.shift_type.toLowerCase() === shiftType
+                        );
+                        
+                        if (shiftRecommendation) {
+                          return (
+                            <Box key={day} sx={{ 
+                              border: '1px solid #e0e0e0',
+                              borderRadius: 1,
+                              p: 1.5,
+                              backgroundColor: '#f8f9fa',
+                              height: 100,
+                              position: 'relative'
+                            }}>
+                              {/* Staff Count */}
+                              <Typography variant="h6" color="primary.main" sx={{ mb: 0.5 }}>
+                                {shiftRecommendation.recommended_staff}
                               </Typography>
+                              
+                              {/* Time Range */}
                               <Typography variant="caption" display="block" color="text.secondary">
-                                Staff: {recommendation.staff_required}
+                                {shiftRecommendation.start_time} - {shiftRecommendation.end_time}
                               </Typography>
-                              <Typography variant="caption" display="block" color="text.secondary">
-                                Residents: {recommendation.resident_count}
+                              
+                              {/* Reason */}
+                              <Typography variant="caption" display="block" color="text.secondary" sx={{ 
+                                fontSize: '0.7rem',
+                                lineHeight: 1.2,
+                                mt: 0.5
+                              }}>
+                                {shiftRecommendation.reason}
                               </Typography>
                             </Box>
-                            
-                            {/* Shift Time (if available) */}
-                            {recommendation.shift_time && (
-                              <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
-                                {recommendation.shift_time}
-                              </Typography>
-                            )}
-                          </Box>
-                        );
-                      } else {
-                        return (
-                          <Box key={day} sx={{ 
-                            border: '1px solid #e0e0e0',
-                            borderRadius: 1,
-                            p: 1.5,
-                            backgroundColor: '#fafafa',
-                            height: 100,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'text.disabled',
-                            fontSize: '0.8rem'
-                          }}>
-                            No data
-                          </Box>
-                        );
+                          );
+                        }
                       }
+                      
+                      // No recommendation for this day/shift combination
+                      return (
+                        <Box key={day} sx={{ 
+                          border: '1px solid #e0e0e0',
+                          borderRadius: 1,
+                          p: 1.5,
+                          backgroundColor: '#fafafa',
+                          height: 100,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'text.secondary'
+                        }}>
+                          No data
+                        </Box>
+                      );
                     })}
                   </Box>
                 ))}
@@ -719,7 +718,11 @@ const AIRecommendations = ({ onDataChange }) => {
                 <Grid item xs={3}>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h4" color="success.main">
-                      {weeklyRecommendations.reduce((sum, rec) => sum + rec.care_hours, 0).toFixed(1)}h
+                      {weeklyRecommendations.reduce((sum, dayRec) => 
+                        sum + dayRec.shifts.reduce((daySum, shift) => 
+                          daySum + (shift.recommended_staff * 8), 0
+                        ), 0
+                      ).toFixed(1)}h
                     </Typography>
                     <Typography variant="body2" color="textSecondary">Total Care Hours</Typography>
                   </Box>
@@ -727,7 +730,11 @@ const AIRecommendations = ({ onDataChange }) => {
                 <Grid item xs={3}>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h4" color="info.main">
-                      {weeklyRecommendations.reduce((sum, rec) => sum + rec.staff_required, 0)}
+                      {weeklyRecommendations.reduce((sum, dayRec) => 
+                        sum + dayRec.shifts.reduce((daySum, shift) => 
+                          daySum + shift.recommended_staff, 0
+                        ), 0
+                      )}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">Total Staff Required</Typography>
                   </Box>
@@ -735,7 +742,10 @@ const AIRecommendations = ({ onDataChange }) => {
                 <Grid item xs={3}>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h4" color="warning.main">
-                      {(weeklyRecommendations.reduce((sum, rec) => sum + rec.confidence_score, 0) / weeklyRecommendations.length).toFixed(0)}%
+                      {weeklyRecommendations.length > 0 ? 
+                        (weeklyRecommendations.reduce((sum, dayRec) => 
+                          sum + dayRec.shifts.length, 0
+                        ) / weeklyRecommendations.length).toFixed(0) : 0}%
                     </Typography>
                     <Typography variant="body2" color="textSecondary">Avg Confidence</Typography>
                   </Box>
