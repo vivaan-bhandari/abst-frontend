@@ -575,6 +575,21 @@ const AIRecommendations = ({ onDataChange }) => {
                   <strong>Data:</strong> {JSON.stringify(weeklyRecommendations.slice(0, 2), null, 2)}
                 </Typography>
               )}
+              
+              {/* Detailed Day-by-Day Debug */}
+              <Box sx={{ mt: 2, p: 1, backgroundColor: '#e8e8e8', borderRadius: 1 }}>
+                <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  Day-by-Day Data Check:
+                </Typography>
+                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => {
+                  const dayData = weeklyRecommendations.find(rec => rec.day_name === day);
+                  return (
+                    <Typography key={day} variant="body2" color="textSecondary" sx={{ fontSize: '0.7rem' }}>
+                      <strong>{day}:</strong> {dayData ? `✓ Found (${dayData.shifts.length} shifts)` : '✗ Missing'}
+                    </Typography>
+                  );
+                })}
+              </Box>
             </Box>
             
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -663,11 +678,15 @@ const AIRecommendations = ({ onDataChange }) => {
                         rec.day_name === day
                       );
                       
+                      console.log(`Processing day: ${day}, found:`, dayRecommendation);
+                      
                       if (dayRecommendation) {
                         // Find the specific shift type within this day's shifts
                         const shiftRecommendation = dayRecommendation.shifts.find(shift => 
                           shift.shift_type.toLowerCase() === shiftType
                         );
+                        
+                        console.log(`Processing shift: ${shiftType}, found:`, shiftRecommendation);
                         
                         if (shiftRecommendation) {
                           return (
@@ -715,7 +734,7 @@ const AIRecommendations = ({ onDataChange }) => {
                           justifyContent: 'center',
                           color: 'text.secondary'
                         }}>
-                          {weeklyRecommendations.length === 0 ? 'Click "Get Weekly Recommendations"' : 'No data'}
+                          {weeklyRecommendations.length === 0 ? 'Click "Get Weekly Recommendations"' : `No data for ${day} ${shiftType}`}
                         </Box>
                       );
                     })}
