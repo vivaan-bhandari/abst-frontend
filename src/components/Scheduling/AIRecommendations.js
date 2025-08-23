@@ -561,8 +561,22 @@ const AIRecommendations = ({ onDataChange }) => {
         </Box>
 
         {/* Weekly Recommendations Display */}
-        {showWeekly && weeklyRecommendations.length > 0 && (
+        {showWeekly && (
           <Box sx={{ mb: 4 }}>
+            {/* Debug Info */}
+            <Box sx={{ mb: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1, fontSize: '0.8rem' }}>
+              <Typography variant="body2" color="textSecondary">
+                <strong>Debug Info:</strong> showWeekly: {showWeekly.toString()}, 
+                weeklyRecommendations.length: {weeklyRecommendations.length}, 
+                selectedFacility: {selectedFacility}
+              </Typography>
+              {weeklyRecommendations.length > 0 && (
+                <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+                  <strong>Data:</strong> {JSON.stringify(weeklyRecommendations.slice(0, 2), null, 2)}
+                </Typography>
+              )}
+            </Box>
+            
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6">
                 Weekly Shift Recommendations by Day
@@ -572,11 +586,18 @@ const AIRecommendations = ({ onDataChange }) => {
                 color="success"
                 startIcon={<PlayArrowIcon />}
                 onClick={applyWeeklyRecommendations}
-                disabled={applyingRecommendations}
+                disabled={applyingRecommendations || weeklyRecommendations.length === 0}
               >
                 {applyingRecommendations ? 'Applying...' : 'Apply All Weekly Recommendations'}
               </Button>
             </Box>
+            
+            {/* Debug Info */}
+            {weeklyRecommendations.length === 0 && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                No weekly recommendations loaded yet. Click "Get Weekly Recommendations" to generate AI-powered shift suggestions.
+              </Alert>
+            )}
             
             {/* Weekly Timetable Grid */}
             <Paper sx={{ p: 2, overflow: 'auto' }}>
@@ -694,7 +715,7 @@ const AIRecommendations = ({ onDataChange }) => {
                           justifyContent: 'center',
                           color: 'text.secondary'
                         }}>
-                          No data
+                          {weeklyRecommendations.length === 0 ? 'Click "Get Weekly Recommendations"' : 'No data'}
                         </Box>
                       );
                     })}
@@ -703,7 +724,7 @@ const AIRecommendations = ({ onDataChange }) => {
               </Box>
             </Paper>
             
-            {/* Weekly Summary */}
+            {/* Weekly Summary - Always show when in weekly mode */}
             <Paper sx={{ p: 2, mt: 2 }}>
               <Typography variant="h6" gutterBottom>Weekly Summary</Typography>
               <Grid container spacing={2}>
@@ -718,24 +739,26 @@ const AIRecommendations = ({ onDataChange }) => {
                 <Grid item xs={3}>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h4" color="success.main">
-                      {weeklyRecommendations.reduce((sum, dayRec) => 
-                        sum + dayRec.shifts.reduce((daySum, shift) => 
-                          daySum + (shift.recommended_staff * 8), 0
-                        ), 0
-                      ).toFixed(1)}h
-                    </Typography>
+                      {weeklyRecommendations.length > 0 ? 
+                        weeklyRecommendations.reduce((sum, dayRec) => 
+                          sum + dayRec.shifts.reduce((daySum, shift) => 
+                            daySum + (shift.recommended_staff * 8), 0
+                          ), 0
+                        ).toFixed(1) : 0}h
+                      </Typography>
                     <Typography variant="body2" color="textSecondary">Total Care Hours</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={3}>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h4" color="info.main">
-                      {weeklyRecommendations.reduce((sum, dayRec) => 
-                        sum + dayRec.shifts.reduce((daySum, shift) => 
-                          daySum + shift.recommended_staff, 0
-                        ), 0
-                      )}
-                    </Typography>
+                      {weeklyRecommendations.length > 0 ? 
+                        weeklyRecommendations.reduce((sum, dayRec) => 
+                          sum + dayRec.shifts.reduce((daySum, shift) => 
+                            daySum + shift.recommended_staff, 0
+                          ), 0
+                        ) : 0}
+                      </Typography>
                     <Typography variant="body2" color="textSecondary">Total Staff Required</Typography>
                   </Box>
                 </Grid>
@@ -746,7 +769,7 @@ const AIRecommendations = ({ onDataChange }) => {
                         (weeklyRecommendations.reduce((sum, dayRec) => 
                           sum + dayRec.shifts.length, 0
                         ) / weeklyRecommendations.length).toFixed(0) : 0}%
-                    </Typography>
+                      </Typography>
                     <Typography variant="body2" color="textSecondary">Avg Confidence</Typography>
                   </Box>
                 </Grid>
