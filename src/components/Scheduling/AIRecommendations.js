@@ -707,7 +707,10 @@ e
                               
                               {/* Care Hours - Show Actual ADL Hours Needed */}
                               <Typography variant="h6" color="primary.main" sx={{ mb: 0.5 }}>
-                                {shiftRecommendation.actual_hours_needed || (shiftRecommendation.recommended_staff * 8)}h
+                                {shiftRecommendation.actual_hours_needed > 0 ? 
+                                  `${shiftRecommendation.actual_hours_needed}h` : 
+                                  'No ADL data'
+                                }
                               </Typography>
                               
                               {/* Staff Count */}
@@ -721,7 +724,7 @@ e
                               </Typography>
                               
                               {/* Show if using actual data vs calculated */}
-                              {shiftRecommendation.actual_hours_needed && (
+                              {shiftRecommendation.actual_hours_needed > 0 ? (
                                 <Typography variant="caption" color="text.secondary" sx={{ 
                                   fontSize: '0.7rem',
                                   fontStyle: 'italic',
@@ -729,6 +732,15 @@ e
                                   mt: 0.5
                                 }}>
                                   Based on ADL data
+                                </Typography>
+                              ) : (
+                                <Typography variant="caption" color="text.secondary" sx={{ 
+                                  fontSize: '0.7rem',
+                                  fontStyle: 'italic',
+                                  display: 'block',
+                                  mt: 0.5
+                                }}>
+                                  Default recommendation
                                 </Typography>
                               )}
                             </Box>
@@ -779,7 +791,7 @@ e
                       {weeklyRecommendations.length > 0 ? 
                         weeklyRecommendations.reduce((sum, dayRec) => 
                           sum + dayRec.shifts.reduce((daySum, shift) => 
-                            daySum + (shift.actual_hours_needed || (shift.recommended_staff * 8)), 0
+                            daySum + (shift.actual_hours_needed > 0 ? shift.actual_hours_needed : 0), 0
                           ), 0
                         ).toFixed(1) : 0}h
                       </Typography>
