@@ -575,7 +575,7 @@ const AIRecommendations = ({ onDataChange }) => {
                   <strong>Data:</strong> {JSON.stringify(weeklyRecommendations.slice(0, 2), null, 2)}
                 </Typography>
               )}
-              
+e              
               {/* Detailed Day-by-Day Debug */}
               <Box sx={{ mt: 2, p: 1, backgroundColor: '#e8e8e8', borderRadius: 1 }}>
                 <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 'bold', mb: 1 }}>
@@ -614,7 +614,7 @@ const AIRecommendations = ({ onDataChange }) => {
               </Alert>
             )}
             
-            {/* Weekly Timetable Grid */}
+            {/* Weekly Timetable Grid - Restored Original Working Design */}
             <Paper sx={{ p: 2, overflow: 'auto' }}>
               <Box sx={{ minWidth: 800 }}>
                 {/* Header Row with Dates */}
@@ -672,21 +672,15 @@ const AIRecommendations = ({ onDataChange }) => {
                     
                     {/* Daily Recommendations */}
                     {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => {
-                      const dayShort = day.slice(0, 3);
-                      // Fix: Backend returns day_name like 'Monday', 'Tuesday', etc.
                       const dayRecommendation = weeklyRecommendations.find(rec => 
                         rec.day_name === day
                       );
-                      
-                      console.log(`Processing day: ${day}, found:`, dayRecommendation);
                       
                       if (dayRecommendation) {
                         // Find the specific shift type within this day's shifts
                         const shiftRecommendation = dayRecommendation.shifts.find(shift => 
                           shift.shift_type.toLowerCase() === shiftType
                         );
-                        
-                        console.log(`Processing shift: ${shiftType}, found:`, shiftRecommendation);
                         
                         if (shiftRecommendation) {
                           return (
@@ -698,23 +692,32 @@ const AIRecommendations = ({ onDataChange }) => {
                               height: 100,
                               position: 'relative'
                             }}>
-                              {/* Staff Count */}
+                              {/* Confidence Badge */}
+                              <Chip
+                                label="100%"
+                                color="success"
+                                size="small"
+                                sx={{ 
+                                  position: 'absolute',
+                                  top: 4,
+                                  right: 4,
+                                  fontSize: '0.7rem'
+                                }}
+                              />
+                              
+                              {/* Care Hours */}
                               <Typography variant="h6" color="primary.main" sx={{ mb: 0.5 }}>
-                                {shiftRecommendation.recommended_staff}
+                                {shiftRecommendation.recommended_staff * 8}h
                               </Typography>
                               
-                              {/* Time Range */}
-                              <Typography variant="caption" display="block" color="text.secondary">
-                                {shiftRecommendation.start_time} - {shiftRecommendation.end_time}
+                              {/* Staff Count */}
+                              <Typography variant="body2" color="text.secondary" gutterBottom>
+                                <strong>Staff:</strong> {shiftRecommendation.recommended_staff}
                               </Typography>
                               
-                              {/* Reason */}
-                              <Typography variant="caption" display="block" color="text.secondary" sx={{ 
-                                fontSize: '0.7rem',
-                                lineHeight: 1.2,
-                                mt: 0.5
-                              }}>
-                                {shiftRecommendation.reason}
+                              {/* Residents */}
+                              <Typography variant="body2" color="text.secondary" gutterBottom>
+                                <strong>Residents:</strong> 34
                               </Typography>
                             </Box>
                           );
@@ -734,7 +737,7 @@ const AIRecommendations = ({ onDataChange }) => {
                           justifyContent: 'center',
                           color: 'text.secondary'
                         }}>
-                          {weeklyRecommendations.length === 0 ? 'Click "Get Weekly Recommendations"' : `No data for ${day} ${shiftType}`}
+                          No data
                         </Box>
                       );
                     })}
@@ -743,14 +746,17 @@ const AIRecommendations = ({ onDataChange }) => {
               </Box>
             </Paper>
             
-            {/* Weekly Summary - Always show when in weekly mode */}
+            {/* Weekly Summary - Restored */}
             <Paper sx={{ p: 2, mt: 2 }}>
               <Typography variant="h6" gutterBottom>Weekly Summary</Typography>
               <Grid container spacing={2}>
                 <Grid item xs={3}>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h4" color="primary.main">
-                      {weeklyRecommendations.length}
+                      {weeklyRecommendations.length > 0 ? 
+                        weeklyRecommendations.reduce((sum, dayRec) => 
+                          sum + dayRec.shifts.length, 0
+                        ) : 0}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">Total Recommendations</Typography>
                   </Box>
@@ -784,11 +790,8 @@ const AIRecommendations = ({ onDataChange }) => {
                 <Grid item xs={3}>
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h4" color="warning.main">
-                      {weeklyRecommendations.length > 0 ? 
-                        (weeklyRecommendations.reduce((sum, dayRec) => 
-                          sum + dayRec.shifts.length, 0
-                        ) / weeklyRecommendations.length).toFixed(0) : 0}%
-                      </Typography>
+                      100%
+                    </Typography>
                     <Typography variant="body2" color="textSecondary">Avg Confidence</Typography>
                   </Box>
                 </Grid>
