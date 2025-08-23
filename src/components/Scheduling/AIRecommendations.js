@@ -364,7 +364,7 @@ const AIRecommendations = ({ onDataChange }) => {
                     Total Residents
                   </Typography>
                   <Typography variant="h4" component="div">
-                    {insights.total_residents}
+                    {insights.staffing_metrics?.total_staff || 0}
                   </Typography>
                 </CardContent>
               </Card>
@@ -377,7 +377,7 @@ const AIRecommendations = ({ onDataChange }) => {
                     Total Care Hours
                   </Typography>
                   <Typography variant="h4" component="div">
-                    {insights.total_care_hours}
+                    {insights.adl_metrics?.total_hours || 0}
                   </Typography>
                 </CardContent>
               </Card>
@@ -390,7 +390,7 @@ const AIRecommendations = ({ onDataChange }) => {
                     Avg Acuity Score
                   </Typography>
                   <Typography variant="h4" component="div">
-                    {insights.average_acuity_score}
+                    {insights.adl_metrics?.average_minutes_per_adl || 0}
                   </Typography>
                 </CardContent>
               </Card>
@@ -403,34 +403,31 @@ const AIRecommendations = ({ onDataChange }) => {
                     Staffing Efficiency
                   </Typography>
                   <Typography variant="h4" component="div">
-                    {(insights.staffing_efficiency_score * 100).toFixed(0)}%
+                    {insights.staffing_metrics?.staff_to_resident_ratio || 'N/A'}
                   </Typography>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={insights.staffing_efficiency_score * 100} 
-                    sx={{ mt: 1 }}
-                  />
                 </CardContent>
               </Card>
             </Grid>
           </Grid>
 
           {/* Care Intensity Distribution */}
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Care Intensity Distribution
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              {Object.entries(insights.care_intensity_distribution).map(([intensity, count]) => (
-                <Chip
-                  key={intensity}
-                  label={`${intensity.charAt(0).toUpperCase() + intensity.slice(1)}: ${count}`}
-                  color={getCareIntensityColor(intensity)}
-                  variant="outlined"
-                />
-              ))}
+          {insights.care_intensity_distribution && Object.keys(insights.care_intensity_distribution).length > 0 && (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Care Intensity Distribution
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                {Object.entries(insights.care_intensity_distribution).map(([intensity, count]) => (
+                  <Chip
+                    key={intensity}
+                    label={`${intensity.charAt(0).toUpperCase() + intensity.slice(1)}: ${count}`}
+                    color={getCareIntensityColor(intensity)}
+                    variant="outlined"
+                  />
+                ))}
+              </Box>
             </Box>
-          </Box>
+          )}
 
           {/* AI Recommendations */}
           {insights.recommendations && insights.recommendations.length > 0 && (
@@ -438,7 +435,7 @@ const AIRecommendations = ({ onDataChange }) => {
               <Typography variant="h6" gutterBottom>
                 AI Recommendations
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={{ display: 'flex', direction: 'column', gap: 1 }}>
                 {insights.recommendations.map((rec, index) => (
                   <Alert key={index} severity="info" icon={<LightbulbIcon />}>
                     {rec}
