@@ -148,7 +148,8 @@ const StaffAvailability = ({ selectedFacility, onDataChange }) => {
   const handleOpenDialog = (item = null) => {
     if (item) {
       setEditingAvailability(item);
-      setSelectedStaff(item.staff);
+      // Fix: item.staff is now the full staff object, so we need the ID
+      setSelectedStaff(item.staff?.id || item.staff);
       setAvailabilityStatus(item.availability_status);
       setPreferredStartTime(item.preferred_start_time || '');
       setPreferredEndTime(item.preferred_end_time || '');
@@ -479,8 +480,9 @@ const StaffAvailability = ({ selectedFacility, onDataChange }) => {
           <Grid container spacing={2} sx={{ pt: 2 }}>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Staff Member</InputLabel>
+                <InputLabel id="staff-member-label">Staff Member</InputLabel>
                 <Select
+                  labelId="staff-member-label"
                   value={selectedStaff}
                   onChange={(e) => setSelectedStaff(e.target.value)}
                   label="Staff Member"
@@ -509,8 +511,9 @@ const StaffAvailability = ({ selectedFacility, onDataChange }) => {
 
             <Grid item xs={12} md={6}>
               <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Availability Status</InputLabel>
+                <InputLabel id="availability-status-label">Availability Status</InputLabel>
                 <Select
+                  labelId="availability-status-label"
                   value={availabilityStatus}
                   onChange={(e) => setAvailabilityStatus(e.target.value)}
                   label="Availability Status"
@@ -528,12 +531,13 @@ const StaffAvailability = ({ selectedFacility, onDataChange }) => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Max Hours"
+                label="Maximum Hours"
                 type="number"
                 value={maxHours}
                 onChange={(e) => setMaxHours(e.target.value)}
                 sx={{ mb: 2 }}
                 inputProps={{ min: 1, max: 24 }}
+                helperText="Hours per day (1-24)"
               />
             </Grid>
 
@@ -546,6 +550,7 @@ const StaffAvailability = ({ selectedFacility, onDataChange }) => {
                 onChange={(e) => setPreferredStartTime(e.target.value)}
                 sx={{ mb: 2 }}
                 InputLabelProps={{ shrink: true }}
+                helperText="When you prefer to start"
               />
             </Grid>
 
@@ -558,6 +563,7 @@ const StaffAvailability = ({ selectedFacility, onDataChange }) => {
                 onChange={(e) => setPreferredEndTime(e.target.value)}
                 sx={{ mb: 2 }}
                 InputLabelProps={{ shrink: true }}
+                helperText="When you prefer to end"
               />
             </Grid>
 
@@ -577,17 +583,21 @@ const StaffAvailability = ({ selectedFacility, onDataChange }) => {
                   />
                 ))}
               </Box>
+              <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+                Click to select your preferred shift types
+              </Typography>
             </Grid>
 
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Notes"
+                label="Additional Notes"
                 multiline
                 rows={3}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Additional notes about availability..."
+                placeholder="Any special requirements, preferences, or additional information..."
+                helperText="Optional notes about your availability"
               />
             </Grid>
           </Grid>
