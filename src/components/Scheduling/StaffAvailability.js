@@ -196,7 +196,7 @@ const StaffAvailability = ({ selectedFacility, onDataChange }) => {
       console.log('🔍 DEBUG: API URL will be:', `${API_BASE_URL}/api/scheduling/staff-availability/?facility=${selectedFacility}`);
 
       const data = {
-        staff: selectedStaff,
+        staff_id: selectedStaff,  // Changed from 'staff' to 'staff_id'
         date: selectedDate.toISOString().split('T')[0],
         availability_status: availabilityStatus,
         preferred_start_time: preferredStartTime || null,
